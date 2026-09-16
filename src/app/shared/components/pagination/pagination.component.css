@@ -1,8 +1,9 @@
 .mat-pagination-wrapper {
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0;
   overflow: hidden;
+  margin-bottom: 0;
 }
 
 :host ::ng-deep .mat-mdc-paginator {

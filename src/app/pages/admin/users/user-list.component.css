@@ -1,7 +1,23 @@
 .user-management-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  height: calc(100vh - 96px);
+  margin-bottom: -28px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.user-management-page app-page-header {
+  flex-shrink: 0;
+  display: block;
+}
+
+.user-management-page app-data-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* User cell in table */
