@@ -1,80 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { LoadingService } from '../../../core/services/loading.service';
 
 @Component({
   selector: 'app-loader',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="loader-container" [class.is-fullscreen]="fullscreen()">
-      <div class="spinner" [class]="'spinner-' + size()"></div>
-      @if (message()) {
-        <p class="loader-message">{{ message() }}</p>
-      }
-    </div>
-  `,
-  styles: [
-    `
-      .loader-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 32px 16px;
-        gap: 12px;
-      }
-
-      .loader-container.is-fullscreen {
-        position: fixed;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-      }
-
-      .spinner {
-        border-radius: 50%;
-        border: 3px solid #e2e8f0;
-        border-top-color: #4f46e5;
-        animation: spin 0.8s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
-      }
-
-      .spinner-sm {
-        width: 20px;
-        height: 20px;
-        border-width: 2px;
-      }
-
-      .spinner-md {
-        width: 36px;
-        height: 36px;
-        border-width: 3px;
-      }
-
-      .spinner-lg {
-        width: 52px;
-        height: 52px;
-        border-width: 4px;
-      }
-
-      .loader-message {
-        font-size: 14px;
-        color: #64748b;
-        font-weight: 500;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    `,
-  ],
   templateUrl: './loader.component.html',
   styleUrl: './loader.component.css',
 })
 export class LoaderComponent {
+  private loadingService = inject(LoadingService, { optional: true });
+
   message = input<string>('');
   size = input<'sm' | 'md' | 'lg'>('md');
   fullscreen = input<boolean>(false);
+
+  // Prevent duplicate loaders: If global fullscreen loader is active, hide inline loaders
+  shouldDisplay = computed(() => {
+    if (this.fullscreen()) {
+      return true;
+    }
+    if (this.loadingService?.isLoading()) {
+      return false;
+    }
+    return true;
+  });
 }

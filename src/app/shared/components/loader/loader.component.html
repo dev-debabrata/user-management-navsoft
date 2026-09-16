@@ -1,6 +1,8 @@
-<div class="loader-container" [class.is-fullscreen]="fullscreen()">
-  <div class="spinner" [class]="'spinner-' + size()"></div>
-  @if (message()) {
-    <p class="loader-message">{{ message() }}</p>
-  }
-</div>
+@if (shouldDisplay()) {
+  <div class="loader-container" [class.is-fullscreen]="fullscreen()">
+    <div class="spinner" [class]="'spinner-' + size()"></div>
+    @if (message()) {
+      <p class="loader-message">{{ message() }}</p>
+    }
+  </div>
+}

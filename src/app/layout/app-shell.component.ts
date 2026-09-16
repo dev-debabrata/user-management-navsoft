@@ -6,6 +6,7 @@ import { LoadingService } from '../core/services/loading.service';
 import { getInitials } from '../core/utils/formatters';
 import { LucideAngularModule } from 'lucide-angular';
 import { BadgeComponent } from '../shared/components/badge/badge.component';
+import { LoaderComponent } from '../shared/components/loader/loader.component';
 
 export type NavIconType =
   'admin-dash' | 'manager-dash' | 'user-dash' | 'users' | 'drive' | 'gallery' | 'profile';
@@ -26,6 +27,7 @@ interface NavItem {
     RouterLink,
     RouterLinkActive,
     BadgeComponent,
+    LoaderComponent,
     LucideAngularModule,
   ],
   templateUrl: './app-shell.component.html',

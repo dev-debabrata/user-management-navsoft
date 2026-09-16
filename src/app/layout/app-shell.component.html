@@ -1,6 +1,6 @@
-<!-- Top Global Loading Bar -->
+<!-- Global Circular Loader with Overlay -->
 @if (loadingService.isLoading()) {
-  <div class="top-loading-bar"></div>
+  <app-loader [fullscreen]="true" size="lg" message="Loading..."></app-loader>
 }
 
 <div class="app-layout" [class.sidebar-collapsed]="isSidebarCollapsed()">
