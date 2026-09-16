@@ -1,0 +1,38 @@
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
+import { ToastService } from '../services/toast.service';
+
+export const errorInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const toast = inject(ToastService);
+
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      let errorMessage = 'An unexpected error occurred.';
+
+      if (error.error instanceof ErrorEvent) {
+        // Client-side or network error
+        errorMessage = `Client error: ${error.error.message}`;
+      } else if (error.status === 0) {
+        errorMessage = 'Unable to connect to mock API server. Please ensure `npm run api` is running on port 3000.';
+        toast.error(errorMessage, 'Network Connection Error');
+      } else if (error.status === 401) {
+        authService.logout(true);
+        errorMessage = 'Your session has expired. Please log in again.';
+        toast.error(errorMessage, 'Session Expired');
+      } else if (error.status === 403) {
+        errorMessage = 'You do not have permission to perform this action.';
+        toast.error(errorMessage, 'Forbidden');
+      } else if (error.status === 404) {
+        errorMessage = 'The requested resource was not found.';
+      } else if (error.status >= 500) {
+        errorMessage = `Server error (${error.status}): Please try again later.`;
+        toast.error(errorMessage, 'Server Error');
+      }
+
+      return throwError(() => error);
+    })
+  );
+};

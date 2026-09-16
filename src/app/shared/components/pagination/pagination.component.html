@@ -1,0 +1,78 @@
+<div class="pagination-wrapper">
+  <div class="pagination-info">
+    Showing <strong>{{ startItem() }}</strong> to <strong>{{ endItem() }}</strong> of
+    <strong>{{ total() }}</strong> results
+  </div>
+
+  <div class="pagination-controls">
+    <div class="page-size-selector">
+      <label for="pageSize" class="size-label">Rows per page:</label>
+      <select id="pageSize" class="size-select" [value]="limit()" (change)="onLimitChange($event)">
+        @for (opt of pageSizeOptions(); track opt) {
+          <option [value]="opt">{{ opt }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="page-buttons">
+      <button
+        type="button"
+        class="page-btn"
+        [disabled]="page() <= 1"
+        (click)="setPage(page() - 1)"
+        aria-label="Previous page"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+
+      @for (p of pages(); track p) {
+        @if (p === -1) {
+          <span class="ellipsis">...</span>
+        } @else {
+          <button
+            type="button"
+            class="page-btn page-num"
+            [class.active]="p === page()"
+            (click)="setPage(p)"
+          >
+            {{ p }}
+          </button>
+        }
+      }
+
+      <button
+        type="button"
+        class="page-btn"
+        [disabled]="page() >= totalPages()"
+        (click)="setPage(page() + 1)"
+        aria-label="Next page"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
