@@ -21,16 +21,34 @@ export class UserService {
       httpParams = httpParams.set('q', params.search.trim());
     }
 
-    if (params.role && params.role !== 'all') {
-      httpParams = httpParams.set('role', params.role);
+    if (params.role) {
+      if (Array.isArray(params.role)) {
+        params.role.forEach((r) => {
+          if (r && r !== 'all') httpParams = httpParams.append('role', r);
+        });
+      } else if (params.role !== 'all') {
+        httpParams = httpParams.set('role', params.role);
+      }
     }
 
-    if (params.status && params.status !== 'all') {
-      httpParams = httpParams.set('status', params.status);
+    if (params.status) {
+      if (Array.isArray(params.status)) {
+        params.status.forEach((s) => {
+          if (s && s !== 'all') httpParams = httpParams.append('status', s);
+        });
+      } else if (params.status !== 'all') {
+        httpParams = httpParams.set('status', params.status);
+      }
     }
 
-    if (params.department && params.department !== 'all') {
-      httpParams = httpParams.set('department', params.department);
+    if (params.department) {
+      if (Array.isArray(params.department)) {
+        params.department.forEach((d) => {
+          if (d && d !== 'all') httpParams = httpParams.append('department', d);
+        });
+      } else if (params.department !== 'all') {
+        httpParams = httpParams.set('department', params.department);
+      }
     }
 
     if (params.sort) {
@@ -60,7 +78,7 @@ export class UserService {
             limit: params.limit,
             totalPages,
           };
-        })
+        }),
       );
   }
 

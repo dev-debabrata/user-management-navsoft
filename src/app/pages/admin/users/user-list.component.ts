@@ -1,19 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActiveFilterState, FilterGroup } from '../../../core/models/filter.model';
+import { TableColumn } from '../../../core/models/table.model';
 import { Role, User, UserStatus } from '../../../core/models/user.model';
 import { SnackbarService } from '../../../core/services/snackbar.service';
 import { UserService } from '../../../core/services/user.service';
 import { formatDate, getInitials } from '../../../core/utils/formatters';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
-import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-user-list',
@@ -23,13 +23,11 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
     ReactiveFormsModule,
     PageHeaderComponent,
     UiButtonComponent,
-    SearchInputComponent,
-    PaginationComponent,
+    DataTableComponent,
     BadgeComponent,
     ModalComponent,
     ConfirmDialogComponent,
-    EmptyStateComponent,
-    LoaderComponent,
+    LucideAngularModule,
   ],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.css',
@@ -44,13 +42,117 @@ export class UserListComponent implements OnInit {
   isDeleting = signal<boolean>(false);
 
   users = signal<User[]>([]);
+  allUsers = signal<User[]>([]);
   totalUsers = signal<number>(0);
   page = signal<number>(1);
   limit = signal<number>(10);
   search = signal<string>('');
-  roleFilter = signal<string>('all');
-  statusFilter = signal<string>('all');
-  deptFilter = signal<string>('all');
+  activeFilters = signal<ActiveFilterState>({});
+
+  columns: TableColumn[] = [
+    { key: 'user', header: 'User' },
+    { key: 'role', header: 'Role' },
+    { key: 'department', header: 'Department' },
+    { key: 'phone', header: 'Phone' },
+    { key: 'status', header: 'Status' },
+    { key: 'createdAt', header: 'Joined Date' },
+    { key: 'actions', header: 'Actions', align: 'right', width: '130px' },
+  ];
+
+  // Dynamic filter groups computed with live counts from all users
+  filterGroups = computed<FilterGroup[]>(() => {
+    const all = this.allUsers();
+
+    // Counts
+    const roleCounts: Record<string, number> = { admin: 0, manager: 0, user: 0 };
+    const statusCounts: Record<string, number> = { active: 0, inactive: 0 };
+    const deptCounts: Record<string, number> = {
+      Engineering: 0,
+      Sales: 0,
+      Design: 0,
+      Support: 0,
+      Finance: 0,
+    };
+
+    for (const u of all) {
+      const role = (u.role || '').toLowerCase();
+      if (roleCounts[role] !== undefined) {
+        roleCounts[role]++;
+      } else if (role === 'viewer') {
+        // Gracefully count any legacy viewer record as user
+        roleCounts['user'] = (roleCounts['user'] || 0) + 1;
+      }
+
+      const status = (u.status || '').toLowerCase();
+      if (statusCounts[status] !== undefined) {
+        statusCounts[status]++;
+      }
+
+      if (u.department && deptCounts[u.department] !== undefined) {
+        deptCounts[u.department]++;
+      }
+    }
+
+    const defaultDepts = ['Engineering', 'Sales', 'Design', 'Support', 'Finance'];
+    const deptOptions = defaultDepts.map((dept) => ({
+      label: dept,
+      value: dept,
+      count: deptCounts[dept] ?? 0,
+    }));
+
+    return [
+      {
+        id: 'role',
+        title: 'Role',
+        searchable: true,
+        options: [
+          { label: 'Admin', value: 'admin', count: roleCounts['admin'] ?? 0 },
+          { label: 'Manager', value: 'manager', count: roleCounts['manager'] ?? 0 },
+          { label: 'User', value: 'user', count: roleCounts['user'] ?? 0 },
+        ],
+      },
+      {
+        id: 'department',
+        title: 'Department',
+        searchable: true,
+        options: deptOptions,
+      },
+      {
+        id: 'status',
+        title: 'Status',
+        searchable: false,
+        options: [
+          { label: 'Active', value: 'active', count: statusCounts['active'] ?? 0 },
+          { label: 'Inactive', value: 'inactive', count: statusCounts['inactive'] ?? 0 },
+        ],
+      },
+    ];
+  });
+
+  // Calculate live matching users based on currently selected drawer filters
+  calculateMatchingCount = (filters: ActiveFilterState): number => {
+    const all = this.allUsers();
+    const roles = (filters['role'] || []).map((r) => r.toLowerCase());
+    const depts = filters['department'] || [];
+    const statuses = (filters['status'] || []).map((s) => s.toLowerCase());
+
+    if (roles.length === 0 && depts.length === 0 && statuses.length === 0) {
+      return all.length;
+    }
+
+    return all.filter((u) => {
+      const uRole = (u.role || '').toLowerCase();
+      const roleMatch =
+        roles.length === 0 ||
+        roles.includes(uRole) ||
+        (roles.includes('user') && uRole === 'viewer');
+      if (!roleMatch) return false;
+
+      if (depts.length > 0 && (!u.department || !depts.includes(u.department))) return false;
+      if (statuses.length > 0 && !statuses.includes((u.status || '').toLowerCase())) return false;
+      return true;
+    }).length;
+  };
 
   // Modals state
   isAddModalOpen = signal<boolean>(false);
@@ -85,20 +187,30 @@ export class UserListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadAllUsersForCounts();
     this.fetchUsers();
+  }
+
+  loadAllUsersForCounts(): void {
+    this.userService.getAllUsers().subscribe({
+      next: (data) => {
+        this.allUsers.set(data);
+      },
+    });
   }
 
   fetchUsers(): void {
     this.isLoading.set(true);
+    const filters = this.activeFilters();
 
     this.userService
       .getUsers({
         page: this.page(),
         limit: this.limit(),
         search: this.search(),
-        role: this.roleFilter(),
-        status: this.statusFilter(),
-        department: this.deptFilter(),
+        role: filters['role'],
+        status: filters['status'],
+        department: filters['department'],
       })
       .subscribe({
         next: (res) => {
@@ -118,23 +230,8 @@ export class UserListComponent implements OnInit {
     this.fetchUsers();
   }
 
-  onRoleChange(e: Event): void {
-    const val = (e.target as HTMLSelectElement).value;
-    this.roleFilter.set(val);
-    this.page.set(1);
-    this.fetchUsers();
-  }
-
-  onStatusChange(e: Event): void {
-    const val = (e.target as HTMLSelectElement).value;
-    this.statusFilter.set(val);
-    this.page.set(1);
-    this.fetchUsers();
-  }
-
-  onDeptChange(e: Event): void {
-    const val = (e.target as HTMLSelectElement).value;
-    this.deptFilter.set(val);
+  onFilterChange(filters: ActiveFilterState): void {
+    this.activeFilters.set(filters);
     this.page.set(1);
     this.fetchUsers();
   }

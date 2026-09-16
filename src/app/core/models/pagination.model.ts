@@ -4,9 +4,9 @@ export interface PaginationParams {
   search?: string;
   sort?: string;
   order?: 'asc' | 'desc';
-  role?: string;
-  status?: string;
-  department?: string;
+  role?: string | string[];
+  status?: string | string[];
+  department?: string | string[];
 }
 
 export interface PagedResult<T> {
