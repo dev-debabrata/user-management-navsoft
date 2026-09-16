@@ -2,12 +2,12 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { Role } from '../models/user.model';
 import { AuthService } from '../services/auth.service';
-import { ToastService } from '../services/toast.service';
+import { SnackbarService } from '../services/snackbar.service';
 
 export const roleGuard: CanActivateFn = (route) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const toast = inject(ToastService);
+  const snackbar = inject(SnackbarService);
 
   const allowedRoles = route.data['roles'] as Role[] | undefined;
 
@@ -19,9 +19,9 @@ export const roleGuard: CanActivateFn = (route) => {
     return true;
   }
 
-  toast.error(
+  snackbar.error(
     `You do not have permission to view this page. Required: ${allowedRoles.join(', ')}`,
-    'Access Denied'
+    'Access Denied',
   );
 
   return router.createUrlTree(['/unauthorized']);

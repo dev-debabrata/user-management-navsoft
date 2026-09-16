@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 import { ImageItem, ImageUploadPreview } from '../../core/models/image.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ImageService } from '../../core/services/image.service';
-import { ToastService } from '../../core/services/toast.service';
+import { SnackbarService } from '../../core/services/snackbar.service';
 import { formatBytes, formatDate } from '../../core/utils/formatters';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
@@ -35,7 +35,7 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
 export class GalleryComponent implements OnInit {
   private imageService = inject(ImageService);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
 
   isLoading = signal<boolean>(true);
   isUploading = signal<boolean>(false);
@@ -131,7 +131,7 @@ export class GalleryComponent implements OnInit {
         this.isUploading.set(false);
         this.clearPreviews();
         this.showUploader.set(false);
-        this.toast.success(`Successfully uploaded ${created.length} image(s)!`);
+        this.snackbar.success(`Successfully uploaded ${created.length} image(s)!`);
         if (created.length > 0) {
           this.activeImage.set(created[0]);
         }
@@ -139,7 +139,7 @@ export class GalleryComponent implements OnInit {
       },
       error: () => {
         this.isUploading.set(false);
-        this.toast.error('Failed to upload some images. Please try again.');
+        this.snackbar.error('Failed to upload some images. Please try again.');
       },
     });
   }
@@ -158,7 +158,7 @@ export class GalleryComponent implements OnInit {
     a.href = image.url;
     a.download = image.name;
     a.click();
-    this.toast.info(`Downloading ${image.name}...`);
+    this.snackbar.info(`Downloading ${image.name}...`);
   }
 
   confirmDeleteImage(image: ImageItem): void {
@@ -180,7 +180,7 @@ export class GalleryComponent implements OnInit {
       next: () => {
         this.isDeleting.set(false);
         this.closeDeleteModal();
-        this.toast.success(`Image "${img.name}" deleted.`);
+        this.snackbar.success(`Image "${img.name}" deleted.`);
 
         if (this.activeImage()?.id === img.id) {
           this.activeImage.set(null);
@@ -189,7 +189,7 @@ export class GalleryComponent implements OnInit {
       },
       error: () => {
         this.isDeleting.set(false);
-        this.toast.error('Failed to delete image.');
+        this.snackbar.error('Failed to delete image.');
       },
     });
   }

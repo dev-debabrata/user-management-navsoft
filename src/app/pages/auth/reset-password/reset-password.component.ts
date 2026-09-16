@@ -3,7 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { SnackbarService } from '../../../core/services/snackbar.service';
 import { AppValidators } from '../../../core/utils/validators';
 import { LucideAngularModule } from 'lucide-angular';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
@@ -18,7 +18,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
 export class ResetPasswordComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -43,7 +43,7 @@ export class ResetPasswordComponent implements OnInit {
     const email = this.route.snapshot.queryParams['email'];
 
     if (!id || !email) {
-      this.toast.error('Invalid password reset session. Please request a new link.');
+      this.snackbar.error('Invalid password reset session. Please request a new link.');
       this.router.navigate(['/forgot-password']);
       return;
     }
@@ -71,7 +71,7 @@ export class ResetPasswordComponent implements OnInit {
     this.authService.resetPassword(this.userId(), newPassword).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.toast.success(
+        this.snackbar.success(
           'Password has been reset successfully! Please sign in with your new password.',
           'Password Changed',
         );

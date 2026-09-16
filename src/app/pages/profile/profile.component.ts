@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
-import { ToastService } from '../../core/services/toast.service';
+import { SnackbarService } from '../../core/services/snackbar.service';
 import { formatDate, getInitials } from '../../core/utils/formatters';
 import { AppValidators } from '../../core/utils/validators';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
@@ -24,7 +24,7 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
 })
 export class ProfileComponent {
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
   private fb = inject(FormBuilder);
 
   currentUser = this.authService.currentUser;
@@ -73,7 +73,7 @@ export class ProfileComponent {
       .subscribe({
         next: () => {
           this.isLoading.set(false);
-          this.toast.success('Your password has been changed successfully!', 'Security Updated');
+          this.snackbar.success('Your password has been changed successfully!', 'Security Updated');
           this.passwordForm.reset();
         },
         error: (err) => {

@@ -6,7 +6,6 @@ import { LoadingService } from '../core/services/loading.service';
 import { getInitials } from '../core/utils/formatters';
 import { LucideAngularModule } from 'lucide-angular';
 import { BadgeComponent } from '../shared/components/badge/badge.component';
-import { ToastContainerComponent } from '../shared/components/toast-container/toast-container.component';
 
 export type NavIconType =
   'admin-dash' | 'manager-dash' | 'user-dash' | 'users' | 'drive' | 'gallery' | 'profile';
@@ -27,7 +26,6 @@ interface NavItem {
     RouterLink,
     RouterLinkActive,
     BadgeComponent,
-    ToastContainerComponent,
     LucideAngularModule,
   ],
   templateUrl: './app-shell.component.html',

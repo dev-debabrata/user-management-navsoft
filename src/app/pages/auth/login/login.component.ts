@@ -3,7 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { SnackbarService } from '../../../core/services/snackbar.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
 
@@ -17,7 +17,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
 export class LoginComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -58,7 +58,7 @@ export class LoginComponent {
     this.authService.login(credentials).subscribe({
       next: (user) => {
         this.isLoading.set(false);
-        this.toast.success(`Welcome back, ${user.name}!`, 'Logged in');
+        this.snackbar.success(`Welcome back, ${user.name}!`, 'Logged in');
 
         const returnUrl = this.route.snapshot.queryParams['returnUrl'];
         if (returnUrl && returnUrl !== '/' && returnUrl !== '') {

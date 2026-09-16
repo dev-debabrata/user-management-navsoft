@@ -1,6 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { importProvidersFrom } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Info,
+  LucideAngularModule,
+  TriangleAlert,
+  X,
+} from 'lucide-angular';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -11,7 +20,20 @@ describe('AuthService', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [AuthService, provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        AuthService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        importProvidersFrom(
+          LucideAngularModule.pick({
+            Info,
+            CheckCircle2,
+            AlertCircle,
+            TriangleAlert,
+            X,
+          }),
+        ),
+      ],
     });
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);

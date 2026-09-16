@@ -3,7 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { SnackbarService } from '../../../core/services/snackbar.service';
 import { AppValidators } from '../../../core/utils/validators';
 import { LucideAngularModule } from 'lucide-angular';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
@@ -18,7 +18,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
 export class SignupComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
   private router = inject(Router);
 
   form: FormGroup = this.fb.group(
@@ -65,7 +65,7 @@ export class SignupComponent {
       .subscribe({
         next: () => {
           this.isLoading.set(false);
-          this.toast.success(
+          this.snackbar.success(
             'Account successfully created! Please sign in with your credentials.',
             'Registration Complete',
           );

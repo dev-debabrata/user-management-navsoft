@@ -3,7 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
+import { SnackbarService } from '../../../core/services/snackbar.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
 
@@ -17,7 +17,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
 export class ForgotPasswordComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
   private router = inject(Router);
 
   form: FormGroup = this.fb.group({
@@ -46,7 +46,7 @@ export class ForgotPasswordComponent {
     this.authService.forgotPassword(email).subscribe({
       next: (user) => {
         this.isLoading.set(false);
-        this.toast.success(
+        this.snackbar.success(
           'Account found! Please set your new password.',
           'Verification Successful',
         );

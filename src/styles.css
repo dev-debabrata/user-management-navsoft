@@ -206,3 +206,21 @@ textarea:-ms-input-placeholder {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ---------------------------------------------------------------- Material SnackBar Styles */
+.custom-snack-bar-panel.mat-mdc-snack-bar-container {
+  margin: 16px !important;
+
+  .mdc-snackbar__surface {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    overflow: visible !important;
+  }
+
+  .mdc-snackbar__label {
+    padding: 0 !important;
+    width: 100% !important;
+  }
+}

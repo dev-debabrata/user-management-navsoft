@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Role, User, UserStatus } from '../../../core/models/user.model';
-import { ToastService } from '../../../core/services/toast.service';
+import { SnackbarService } from '../../../core/services/snackbar.service';
 import { UserService } from '../../../core/services/user.service';
 import { formatDate, getInitials } from '../../../core/utils/formatters';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -36,7 +36,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
 })
 export class UserListComponent implements OnInit {
   private userService = inject(UserService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
   private fb = inject(FormBuilder);
 
   isLoading = signal<boolean>(true);
@@ -170,7 +170,7 @@ export class UserListComponent implements OnInit {
   submitAddUser(): void {
     if (this.addForm.invalid) {
       this.addForm.markAllAsTouched();
-      this.toast.warning('Please fill in all required fields properly.');
+      this.snackbar.warning('Please fill in all required fields properly.');
       return;
     }
 
@@ -181,12 +181,12 @@ export class UserListComponent implements OnInit {
       next: (created) => {
         this.isSubmitting.set(false);
         this.closeAddModal();
-        this.toast.success(`User "${created.name}" created successfully!`);
+        this.snackbar.success(`User "${created.name}" created successfully!`);
         this.fetchUsers();
       },
       error: () => {
         this.isSubmitting.set(false);
-        this.toast.error('Failed to create user. Please try again.');
+        this.snackbar.error('Failed to create user. Please try again.');
       },
     });
   }
@@ -220,7 +220,7 @@ export class UserListComponent implements OnInit {
   submitEditUser(): void {
     if (this.editForm.invalid) {
       this.editForm.markAllAsTouched();
-      this.toast.warning('Please fill in all required fields properly.');
+      this.snackbar.warning('Please fill in all required fields properly.');
       return;
     }
 
@@ -231,12 +231,12 @@ export class UserListComponent implements OnInit {
       next: (updated) => {
         this.isSubmitting.set(false);
         this.closeEditModal();
-        this.toast.success(`User "${updated.name}" updated successfully!`);
+        this.snackbar.success(`User "${updated.name}" updated successfully!`);
         this.fetchUsers();
       },
       error: () => {
         this.isSubmitting.set(false);
-        this.toast.error('Failed to update user.');
+        this.snackbar.error('Failed to update user.');
       },
     });
   }
@@ -269,12 +269,12 @@ export class UserListComponent implements OnInit {
       next: () => {
         this.isDeleting.set(false);
         this.closeDeleteModal();
-        this.toast.success(`User "${user.name}" deleted.`);
+        this.snackbar.success(`User "${user.name}" deleted.`);
         this.fetchUsers();
       },
       error: () => {
         this.isDeleting.set(false);
-        this.toast.error('Failed to delete user.');
+        this.snackbar.error('Failed to delete user.');
       },
     });
   }

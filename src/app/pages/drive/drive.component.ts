@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 import { BreadcrumbItem, DriveNode, DriveStats } from '../../core/models/drive.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DRIVE_ROOT, DriveService } from '../../core/services/drive.service';
-import { ToastService } from '../../core/services/toast.service';
+import { SnackbarService } from '../../core/services/snackbar.service';
 import { formatBytes, formatDate } from '../../core/utils/formatters';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
@@ -33,7 +33,7 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
 export class DriveComponent implements OnInit {
   private driveService = inject(DriveService);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
 
   isLoading = signal<boolean>(true);
   isActionSubmitting = signal<boolean>(false);
@@ -146,7 +146,7 @@ export class DriveComponent implements OnInit {
   submitCreateFolder(): void {
     const name = this.newFolderName().trim();
     if (!name) {
-      this.toast.warning('Please enter a folder name.');
+      this.snackbar.warning('Please enter a folder name.');
       return;
     }
 
@@ -157,13 +157,13 @@ export class DriveComponent implements OnInit {
       next: (created) => {
         this.isActionSubmitting.set(false);
         this.closeCreateFolderModal();
-        this.toast.success(`Folder "${created.name}" created!`);
+        this.snackbar.success(`Folder "${created.name}" created!`);
         this.loadFolder(this.currentFolderId());
         this.loadStats();
       },
       error: () => {
         this.isActionSubmitting.set(false);
-        this.toast.error('Failed to create folder.');
+        this.snackbar.error('Failed to create folder.');
       },
     });
   }
@@ -187,11 +187,11 @@ export class DriveComponent implements OnInit {
           });
         });
       } catch {
-        this.toast.error(`Failed to upload ${file.name}`);
+        this.snackbar.error(`Failed to upload ${file.name}`);
       }
     }
 
-    this.toast.success(`Uploaded ${files.length} file(s) into current folder!`);
+    this.snackbar.success(`Uploaded ${files.length} file(s) into current folder!`);
     input.value = '';
     this.loadFolder(this.currentFolderId());
     this.loadStats();
@@ -223,12 +223,12 @@ export class DriveComponent implements OnInit {
       next: () => {
         this.isActionSubmitting.set(false);
         this.closeRenameModal();
-        this.toast.success(`Renamed to "${newName}"`);
+        this.snackbar.success(`Renamed to "${newName}"`);
         this.loadFolder(this.currentFolderId());
       },
       error: () => {
         this.isActionSubmitting.set(false);
-        this.toast.error('Failed to rename item.');
+        this.snackbar.error('Failed to rename item.');
       },
     });
   }
@@ -254,7 +254,7 @@ export class DriveComponent implements OnInit {
     a.href = node.dataUrl;
     a.download = node.name;
     a.click();
-    this.toast.info(`Downloading ${node.name}...`);
+    this.snackbar.info(`Downloading ${node.name}...`);
   }
 
   // Delete
@@ -277,13 +277,13 @@ export class DriveComponent implements OnInit {
       next: () => {
         this.isActionSubmitting.set(false);
         this.closeDeleteModal();
-        this.toast.success(`Deleted "${node.name}"`);
+        this.snackbar.success(`Deleted "${node.name}"`);
         this.loadFolder(this.currentFolderId());
         this.loadStats();
       },
       error: () => {
         this.isActionSubmitting.set(false);
-        this.toast.error('Failed to delete item.');
+        this.snackbar.error('Failed to delete item.');
       },
     });
   }

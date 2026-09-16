@@ -11,7 +11,7 @@ import {
   SignUpPayload,
   User,
 } from '../models/user.model';
-import { ToastService } from './toast.service';
+import { SnackbarService } from './snackbar.service';
 
 const SESSION_KEY = 'user_manage_session';
 
@@ -21,7 +21,7 @@ const SESSION_KEY = 'user_manage_session';
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private toast = inject(ToastService);
+  private snackbar = inject(SnackbarService);
 
   private sessionSignal = signal<AuthSession | null>(this.loadStoredSession());
 
@@ -44,7 +44,7 @@ export class AuthService {
       .pipe(
         map((users) => {
           const user = users.find(
-            (u) => u.email.toLowerCase() === credentials.email.trim().toLowerCase()
+            (u) => u.email.toLowerCase() === credentials.email.trim().toLowerCase(),
           );
 
           if (!user) {
@@ -63,7 +63,7 @@ export class AuthService {
         }),
         tap((user) => {
           this.setSession(user);
-        })
+        }),
       );
   }
 
@@ -92,7 +92,7 @@ export class AuthService {
           };
 
           return this.http.post<User>(`${environment.apiUrl}/users`, newUser);
-        })
+        }),
       );
   }
 
@@ -109,7 +109,7 @@ export class AuthService {
             throw new Error('No account found associated with this email address.');
           }
           return user;
-        })
+        }),
       );
   }
 
@@ -131,13 +131,13 @@ export class AuthService {
         return this.http.patch<User>(`${environment.apiUrl}/users/${userId}`, {
           password: payload.newPassword,
         });
-      })
+      }),
     );
   }
 
   logout(redirect: boolean = true): void {
     this.clearSession();
-    this.toast.info('You have been logged out.');
+    this.snackbar.info('You have been logged out.');
     if (redirect) {
       this.router.navigate(['/login']);
     }
@@ -183,7 +183,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         exp: expiresAt,
-      })
+      }),
     );
 
     const session: AuthSession = {
