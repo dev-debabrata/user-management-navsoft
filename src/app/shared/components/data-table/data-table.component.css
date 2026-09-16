@@ -1,3 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
 .data-table-wrapper {
   display: flex;
   flex-direction: column;
@@ -268,7 +277,7 @@
 }
 
 .custom-table td {
-  padding: 14px 18px;
+  padding: 11px 18px;
   font-size: 13.5px;
   color: var(--text);
   border-bottom: 1px solid var(--surface-muted);
@@ -291,4 +300,36 @@
 
 .text-center {
   text-align: center;
+}
+
+/* Height-based responsive scaling for desktop viewports */
+@media (max-height: 800px) {
+  .data-table-wrapper {
+    gap: 8px;
+  }
+  .data-table-toolbar {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .btn-filter-trigger {
+    height: 34px;
+    padding: 6px 12px;
+  }
+  .custom-table th {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+  .custom-table td {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (min-height: 1000px) {
+  .custom-table th {
+    padding: 14px 18px;
+  }
+  .custom-table td {
+    padding: 13px 18px;
+  }
 }

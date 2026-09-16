@@ -1,7 +1,7 @@
 .user-management-page {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 96px);
+  height: calc(100vh - 70px);
   margin-bottom: -28px;
   gap: 10px;
   overflow: hidden;
@@ -28,17 +28,31 @@
 }
 
 .user-avatar-initials {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #e0e7ff;
   color: #4338ca;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   flex-shrink: 0;
+}
+
+@media (max-height: 800px) {
+  .user-management-page {
+    gap: 8px;
+  }
+  .user-cell {
+    gap: 8px;
+  }
+  .user-avatar-initials {
+    width: 30px;
+    height: 30px;
+    font-size: 11.5px;
+  }
 }
 
 .user-cell-meta {
