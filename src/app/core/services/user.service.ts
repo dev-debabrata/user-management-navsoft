@@ -21,35 +21,20 @@ export class UserService {
       httpParams = httpParams.set('q', params.search.trim());
     }
 
-    if (params.role) {
-      if (Array.isArray(params.role)) {
-        params.role.forEach((r) => {
-          if (r && r !== 'all') httpParams = httpParams.append('role', r);
+    const appendParam = (key: string, val: string | string[] | undefined) => {
+      if (!val) return;
+      if (Array.isArray(val)) {
+        val.forEach((item) => {
+          if (item && item !== 'all') httpParams = httpParams.append(key, item);
         });
-      } else if (params.role !== 'all') {
-        httpParams = httpParams.set('role', params.role);
+      } else if (val !== 'all') {
+        httpParams = httpParams.set(key, val);
       }
-    }
+    };
 
-    if (params.status) {
-      if (Array.isArray(params.status)) {
-        params.status.forEach((s) => {
-          if (s && s !== 'all') httpParams = httpParams.append('status', s);
-        });
-      } else if (params.status !== 'all') {
-        httpParams = httpParams.set('status', params.status);
-      }
-    }
-
-    if (params.department) {
-      if (Array.isArray(params.department)) {
-        params.department.forEach((d) => {
-          if (d && d !== 'all') httpParams = httpParams.append('department', d);
-        });
-      } else if (params.department !== 'all') {
-        httpParams = httpParams.set('department', params.department);
-      }
-    }
+    appendParam('role', params.role);
+    appendParam('status', params.status);
+    appendParam('department', params.department);
 
     if (params.sort) {
       httpParams = httpParams.set('_sort', params.sort);
