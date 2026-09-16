@@ -6,6 +6,7 @@ import { LoadingService } from '../core/services/loading.service';
 import { getInitials } from '../core/utils/formatters';
 import { LucideAngularModule } from 'lucide-angular';
 import { BadgeComponent } from '../shared/components/badge/badge.component';
+import { ImageModalComponent } from '../shared/components/image-modal/image-modal.component';
 import { LoaderComponent } from '../shared/components/loader/loader.component';
 
 export type NavIconType =
@@ -28,6 +29,7 @@ interface NavItem {
     RouterLinkActive,
     BadgeComponent,
     LoaderComponent,
+    ImageModalComponent,
     LucideAngularModule,
   ],
   templateUrl: './app-shell.component.html',

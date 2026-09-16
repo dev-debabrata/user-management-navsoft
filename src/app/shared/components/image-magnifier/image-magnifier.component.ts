@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild, input, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, input, signal } from '@angular/core';
+import { ImageModalService, LightboxImage } from '../../../core/services/image-modal.service';
 
 @Component({
   selector: 'app-image-magnifier',
@@ -9,17 +10,21 @@ import { Component, ElementRef, ViewChild, input, signal } from '@angular/core';
   styleUrl: './image-magnifier.component.css',
 })
 export class ImageMagnifierComponent {
+  private imageModalService = inject(ImageModalService);
+
   @ViewChild('imageWrapper') imageWrapperRef!: ElementRef<HTMLDivElement>;
 
   imageUrl = input.required<string>();
   alt = input<string>('Zoom Preview');
-  zoomLevel = input<number>(2.5);
+  zoomLevel = input<number>(2.8);
+  galleryImages = input<(string | LightboxImage)[]>([]);
+  currentIndex = input<number>(0);
 
   isHovering = signal<boolean>(false);
   isLoading = signal<boolean>(true);
   hasError = signal<boolean>(false);
 
-  lensSize = 120;
+  lensSize = 100;
   lensPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
   bgPosition = signal<string>('0% 0%');
 
@@ -41,6 +46,16 @@ export class ImageMagnifierComponent {
   onImageError(): void {
     this.isLoading.set(false);
     this.hasError.set(true);
+  }
+
+  onImageClick(): void {
+    if (this.hasError() || this.isLoading()) return;
+    const list = this.galleryImages();
+    if (list && list.length > 0) {
+      this.imageModalService.open(list, this.currentIndex());
+    } else {
+      this.imageModalService.openSingle(this.imageUrl(), this.alt());
+    }
   }
 
   onMouseMove(e: MouseEvent): void {

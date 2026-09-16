@@ -225,12 +225,36 @@
           <app-image-magnifier
             [imageUrl]="active.url"
             [alt]="active.name"
-            [zoomLevel]="2.5"
+            [zoomLevel]="2.8"
+            [galleryImages]="galleryModalItems()"
+            [currentIndex]="activeImageIndex()"
           ></app-image-magnifier>
         </div>
 
         <div class="active-image-details">
-          <h4 class="details-heading">Asset Information</h4>
+          <div class="details-top-row">
+            <h4 class="details-heading">Asset Information</h4>
+            <app-ui-button variant="outline" size="sm" (click)="openLightbox(activeImageIndex())">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+              View Fullscreen
+            </app-ui-button>
+          </div>
+
           <div class="detail-badge-group">
             <span class="prop-chip"><strong>Name:</strong> {{ active.name }}</span>
             <span class="prop-chip"><strong>Size:</strong> {{ formatBytes(active.size) }}</span>
@@ -240,18 +264,35 @@
             >
           </div>
 
-          <!-- Thumbnail filmstrip switcher -->
-          <div class="filmstrip-wrap">
-            <span class="filmstrip-title">Select from Gallery:</span>
-            <div class="filmstrip">
-              @for (img of images(); track img.id) {
-                <div
-                  class="filmstrip-thumb"
-                  [class.active]="img.id === active.id"
-                  (click)="setActiveImage(img)"
-                >
-                  <img [src]="img.url" [alt]="img.name" />
-                </div>
+          <!-- Compact Thumbnail Grid Selector (No Horizontal Scrollbar, +N More Badge) -->
+          <div class="gallery-selector-wrap">
+            <div class="selector-header">
+              <span class="selector-title">Select from Gallery:</span>
+              <span class="selector-count">{{ images().length }} photos</span>
+            </div>
+
+            <div class="thumbnail-cluster">
+              @for (img of visibleThumbnails(); track img.id; let idx = $index) {
+                @if (idx === maxVisibleThumbnails - 1 && overflowThumbnailsCount() > 0) {
+                  <div
+                    class="thumb-cluster-item overflow-item"
+                    [class.active]="img.id === active.id"
+                    (click)="openLightbox(idx)"
+                    title="View all {{ images().length }} images"
+                  >
+                    <img [src]="img.url" [alt]="img.name" />
+                    <div class="overflow-badge">+{{ overflowThumbnailsCount() }}</div>
+                  </div>
+                } @else {
+                  <div
+                    class="thumb-cluster-item"
+                    [class.active]="img.id === active.id"
+                    (click)="setActiveImage(img)"
+                    [title]="img.name"
+                  >
+                    <img [src]="img.url" [alt]="img.name" />
+                  </div>
+                }
               }
             </div>
           </div>
@@ -296,7 +337,7 @@
               <div class="gallery-img-wrap">
                 <img [src]="img.url" [alt]="img.name" class="gallery-img" />
                 <div class="gallery-hover-overlay">
-                  <span class="zoom-pill">
+                  <span class="zoom-pill" (click)="setActiveImage(img)">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="14"
@@ -313,6 +354,30 @@
                     </svg>
                     Magnify
                   </span>
+                  <button
+                    type="button"
+                    class="lightbox-pill"
+                    (click)="openLightbox($index); $event.stopPropagation()"
+                    title="Fullscreen Lightbox"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <polyline points="9 21 3 21 3 15"></polyline>
+                      <line x1="21" y1="3" x2="14" y2="10"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                    View
+                  </button>
                 </div>
               </div>
 

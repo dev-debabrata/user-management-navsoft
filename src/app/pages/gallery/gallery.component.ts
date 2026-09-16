@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ImageItem, ImageUploadPreview } from '../../core/models/image.model';
 import { AuthService } from '../../core/services/auth.service';
+import { ImageModalService } from '../../core/services/image-modal.service';
 import { ImageService } from '../../core/services/image.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 import { formatBytes, formatDate } from '../../core/utils/formatters';
@@ -36,6 +37,7 @@ export class GalleryComponent implements OnInit {
   private imageService = inject(ImageService);
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
+  modalService = inject(ImageModalService);
 
   isLoading = signal<boolean>(true);
   isUploading = signal<boolean>(false);
@@ -53,6 +55,8 @@ export class GalleryComponent implements OnInit {
   formatBytes = formatBytes;
   formatDate = formatDate;
 
+  maxVisibleThumbnails = 8;
+
   validPreviewsCount = computed(() => {
     return this.selectedPreviews().filter((p) => !p.error && p.dataUrl).length;
   });
@@ -61,6 +65,28 @@ export class GalleryComponent implements OnInit {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.images();
     return this.images().filter((img) => img.name.toLowerCase().includes(q));
+  });
+
+  galleryModalItems = computed(() => {
+    return this.images().map((img) => ({
+      url: img.url,
+      title: img.name,
+    }));
+  });
+
+  activeImageIndex = computed(() => {
+    const active = this.activeImage();
+    if (!active) return 0;
+    const idx = this.images().findIndex((img) => img.id === active.id);
+    return idx >= 0 ? idx : 0;
+  });
+
+  visibleThumbnails = computed(() => {
+    return this.images().slice(0, this.maxVisibleThumbnails);
+  });
+
+  overflowThumbnailsCount = computed(() => {
+    return Math.max(0, this.images().length - this.maxVisibleThumbnails);
   });
 
   ngOnInit(): void {
@@ -146,7 +172,13 @@ export class GalleryComponent implements OnInit {
 
   setActiveImage(image: ImageItem): void {
     this.activeImage.set(image);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  openLightbox(index?: number): void {
+    const list = this.galleryModalItems();
+    if (list.length === 0) return;
+    const startIndex = index !== undefined ? index : this.activeImageIndex();
+    this.modalService.open(list, startIndex);
   }
 
   onSearchChange(q: string): void {

@@ -4,6 +4,7 @@ import { forkJoin } from 'rxjs';
 import { BreadcrumbItem, DriveNode, DriveStats } from '../../core/models/drive.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DRIVE_ROOT, DriveService } from '../../core/services/drive.service';
+import { ImageModalService } from '../../core/services/image-modal.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 import { formatBytes, formatDate } from '../../core/utils/formatters';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -34,6 +35,7 @@ export class DriveComponent implements OnInit {
   private driveService = inject(DriveService);
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
+  private imageModalService = inject(ImageModalService);
 
   isLoading = signal<boolean>(true);
   isActionSubmitting = signal<boolean>(false);
@@ -237,6 +239,15 @@ export class DriveComponent implements OnInit {
   openPreview(node: DriveNode): void {
     if (node.type === 'folder') {
       this.navigateToFolder(node.id);
+      return;
+    }
+    if (this.isImageFile(node) && node.dataUrl) {
+      const allImageFiles = this.currentFiles()
+        .filter((f) => this.isImageFile(f) && f.dataUrl)
+        .map((f) => ({ url: f.dataUrl!, title: f.name }));
+
+      const idx = allImageFiles.findIndex((f) => f.title === node.name);
+      this.imageModalService.open(allImageFiles, Math.max(0, idx));
       return;
     }
     this.previewNode.set(node);

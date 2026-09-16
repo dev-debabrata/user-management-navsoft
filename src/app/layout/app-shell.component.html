@@ -3,6 +3,9 @@
   <app-loader [fullscreen]="true" size="lg" message="Loading..."></app-loader>
 }
 
+<!-- Global Lightbox Image Viewer Modal -->
+<app-image-modal></app-image-modal>
+
 <div class="app-layout" [class.sidebar-collapsed]="isSidebarCollapsed()">
   <!-- Mobile Backdrop -->
   @if (isMobileNavOpen()) {

@@ -1,10 +1,13 @@
 <div class="magnifier-container">
+  <!-- Main Thumbnail Box (Compact Preview) -->
   <div
     #imageWrapper
     class="main-image-wrapper"
     (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()"
     (mousemove)="onMouseMove($event)"
+    (click)="onImageClick()"
+    title="Click to view fullscreen lightbox"
   >
     <img
       [src]="imageUrl()"
@@ -41,6 +44,29 @@
       </div>
     }
 
+    <!-- Click To Expand Badge Overlay -->
+    @if (!isLoading() && !hasError()) {
+      <div class="expand-hint-badge">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+        <span>Click to expand</span>
+      </div>
+    }
+
     <!-- Hover Lens indicator -->
     @if (isHovering() && !hasError() && !isLoading()) {
       <div
@@ -53,7 +79,7 @@
     }
   </div>
 
-  <!-- Zoomed Preview Window -->
+  <!-- Zoomed Preview Window (Big Magnifier on Right) -->
   @if (isHovering() && !hasError() && !isLoading()) {
     <div class="zoom-result-window">
       <div
@@ -63,7 +89,7 @@
         [style.background-size]="zoomLevel() * 100 + '%'"
       ></div>
       <div class="zoom-badge">
-        <span>{{ zoomLevel() }}x Zoom</span>
+        <span>{{ zoomLevel() }}x HD Zoom</span>
       </div>
     </div>
   }
