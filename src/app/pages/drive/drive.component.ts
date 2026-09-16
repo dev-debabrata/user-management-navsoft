@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { BreadcrumbItem, DriveNode, DriveStats } from '../../core/models/drive.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DRIVE_ROOT, DriveService } from '../../core/services/drive.service';
 import { ImageModalService } from '../../core/services/image-modal.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
-import { formatBytes, formatDate } from '../../core/utils/formatters';
+import { formatBytes, formatDate, getInitials } from '../../core/utils/formatters';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
@@ -36,6 +37,8 @@ export class DriveComponent implements OnInit {
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
   private imageModalService = inject(ImageModalService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   isLoading = signal<boolean>(true);
   isActionSubmitting = signal<boolean>(false);
@@ -62,8 +65,12 @@ export class DriveComponent implements OnInit {
   isDeleteOpen = signal<boolean>(false);
   nodeToDelete = signal<DriveNode | null>(null);
 
+  // Three-dot row context menu
+  activeMenuNode = signal<DriveNode | null>(null);
+
   formatBytes = formatBytes;
   formatDate = formatDate;
+  getInitials = getInitials;
 
   filteredNodes = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -80,7 +87,20 @@ export class DriveComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadFolder(DRIVE_ROOT);
+    const savedMode = localStorage.getItem('drive_view_mode') as 'grid' | 'list';
+    if (savedMode && (savedMode === 'grid' || savedMode === 'list')) {
+      this.viewMode.set(savedMode);
+    }
+
+    this.route.queryParamMap.subscribe((params) => {
+      const folderId = params.get('folderId') || DRIVE_ROOT;
+      const view = params.get('view') as 'grid' | 'list';
+      if (view && (view === 'grid' || view === 'list')) {
+        this.viewMode.set(view);
+      }
+      this.loadFolder(folderId);
+    });
+
     this.loadStats();
   }
 
@@ -111,19 +131,55 @@ export class DriveComponent implements OnInit {
 
   navigateToFolder(folderId: string): void {
     this.searchQuery.set('');
-    this.loadFolder(folderId);
+    const queryParams: Record<string, string> = {};
+    if (folderId && folderId !== DRIVE_ROOT) {
+      queryParams['folderId'] = folderId;
+    }
+    if (this.viewMode() === 'list') {
+      queryParams['view'] = 'list';
+    }
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+    });
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    if (this.activeMenuNode()) {
+      this.closeMenu();
+    }
   }
 
   onFolderClick(folder: DriveNode): void {
-    // Single click handler
+    // Single click selects / focuses item; double click opens folder
   }
 
   setViewMode(mode: 'grid' | 'list'): void {
     this.viewMode.set(mode);
+    localStorage.setItem('drive_view_mode', mode);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: mode },
+      queryParamsHandling: 'merge',
+    });
   }
 
   onSearch(query: string): void {
     this.searchQuery.set(query);
+  }
+
+  toggleMenu(node: DriveNode, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.activeMenuNode()?.id === node.id) {
+      this.activeMenuNode.set(null);
+    } else {
+      this.activeMenuNode.set(node);
+    }
+  }
+
+  closeMenu(): void {
+    this.activeMenuNode.set(null);
   }
 
   isImageFile(node: DriveNode): boolean {
