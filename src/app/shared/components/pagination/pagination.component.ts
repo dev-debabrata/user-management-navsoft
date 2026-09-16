@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-pagination',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatPaginatorModule],
   templateUrl: './pagination.component.html',
   styleUrl: './pagination.component.css',
 })
@@ -31,43 +32,12 @@ export class PaginationComponent {
     return Math.min(this.page() * this.limit(), this.total());
   });
 
-  pages = computed(() => {
-    const total = this.totalPages();
-    const current = this.page();
-    const items: number[] = [];
-
-    if (total <= 7) {
-      for (let i = 1; i <= total; i++) items.push(i);
-    } else {
-      items.push(1);
-      if (current > 3) {
-        items.push(-1);
-      }
-
-      const start = Math.max(2, current - 1);
-      const end = Math.min(total - 1, current + 1);
-
-      for (let i = start; i <= end; i++) {
-        items.push(i);
-      }
-
-      if (current < total - 2) {
-        items.push(-1);
-      }
-      items.push(total);
+  onPageChange(event: PageEvent): void {
+    if (event.pageSize !== this.limit()) {
+      this.limitChange.emit(event.pageSize);
     }
-
-    return items;
-  });
-
-  setPage(p: number): void {
-    if (p >= 1 && p <= this.totalPages() && p !== this.page()) {
-      this.pageChange.emit(p);
+    if (event.pageIndex + 1 !== this.page()) {
+      this.pageChange.emit(event.pageIndex + 1);
     }
-  }
-
-  onLimitChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.limitChange.emit(parseInt(select.value, 10));
   }
 }

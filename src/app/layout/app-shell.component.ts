@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../core/services/auth.service';
 import { LoadingService } from '../core/services/loading.service';
 import { getInitials } from '../core/utils/formatters';
+import { LucideAngularModule } from 'lucide-angular';
 import { BadgeComponent } from '../shared/components/badge/badge.component';
 import { ToastContainerComponent } from '../shared/components/toast-container/toast-container.component';
 
@@ -13,7 +14,7 @@ export type NavIconType =
 interface NavItem {
   label: string;
   route: string;
-  iconType: NavIconType;
+  iconName: string;
   roles: string[];
 }
 
@@ -27,6 +28,7 @@ interface NavItem {
     RouterLinkActive,
     BadgeComponent,
     ToastContainerComponent,
+    LucideAngularModule,
   ],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.css',
@@ -49,43 +51,43 @@ export class AppShellComponent {
       label: 'Admin Dashboard',
       route: '/admin/dashboard',
       roles: ['admin'],
-      iconType: 'admin-dash',
+      iconName: 'layout-dashboard',
     },
     {
       label: 'Manager Dashboard',
       route: '/manager/dashboard',
       roles: ['manager'],
-      iconType: 'manager-dash',
+      iconName: 'layout-dashboard',
     },
     {
       label: 'My Dashboard',
       route: '/user/dashboard',
       roles: ['user', 'viewer'],
-      iconType: 'user-dash',
+      iconName: 'home',
     },
     {
       label: 'User Management',
       route: '/admin/users',
       roles: ['admin'],
-      iconType: 'users',
+      iconName: 'users',
     },
     {
       label: 'File & Drive Manager',
       route: '/drive',
       roles: ['admin', 'manager', 'user', 'viewer'],
-      iconType: 'drive',
+      iconName: 'folder',
     },
     {
       label: 'Image Gallery & Zoom',
       route: '/gallery',
       roles: ['admin', 'manager', 'user', 'viewer'],
-      iconType: 'gallery',
+      iconName: 'image',
     },
     {
       label: 'Profile & Security',
       route: '/profile',
       roles: ['admin', 'manager', 'user', 'viewer'],
-      iconType: 'profile',
+      iconName: 'user',
     },
   ];
 
