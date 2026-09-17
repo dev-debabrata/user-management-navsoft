@@ -11,17 +11,17 @@ import { MediaUploadService } from '../../core/services/media-upload.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 import { openDataUrlInNewTab } from '../../core/utils/data-url';
 import { isImageType, isVideoType } from '../../core/utils/file-types';
+import { isValidFolderName } from '../../core/utils/folder-validator';
 import { formatBytes, formatDate, getInitials } from '../../core/utils/formatters';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { FileTypeIconComponent } from '../../shared/components/file-type-icon/file-type-icon.component';
-import { DriveItemMenuComponent } from './drive-item-menu/drive-item-menu.component';
-import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
-import { LoaderComponent } from '../../shared/components/loader/loader.component';
-import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { CreateFolderModalComponent } from './create-folder-modal/create-folder-modal.component';
+import { DriveContentComponent } from './drive-content/drive-content.component';
+import { FilePreviewModalComponent } from './file-preview-modal/file-preview-modal.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { RenameModalComponent } from './rename-modal/rename-modal.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.component';
+import { UploadModalComponent } from '../../shared/components/upload-modal/upload-modal.component';
 
 const CONTEXT_MENU_HEIGHT_PX = 200;
 
@@ -33,13 +33,12 @@ const CONTEXT_MENU_HEIGHT_PX = 200;
     PageHeaderComponent,
     UiButtonComponent,
     SearchInputComponent,
-    ModalComponent,
     ConfirmDialogComponent,
-    DriveItemMenuComponent,
-    EmptyStateComponent,
-    FileTypeIconComponent,
-    IconButtonComponent,
-    LoaderComponent,
+    DriveContentComponent,
+    CreateFolderModalComponent,
+    RenameModalComponent,
+    FilePreviewModalComponent,
+    UploadModalComponent,
     LucideAngularModule,
   ],
   templateUrl: './drive.component.html',
@@ -65,12 +64,10 @@ export class DriveComponent implements OnInit {
   viewMode = signal<'grid' | 'list'>('grid');
   searchQuery = signal<string>('');
 
+  isUploadModalOpen = signal<boolean>(false);
   isCreateFolderOpen = signal<boolean>(false);
-  newFolderName = signal<string>('');
-
   isRenameOpen = signal<boolean>(false);
   nodeToRename = signal<DriveNode | null>(null);
-  renameValue = signal<string>('');
 
   isPreviewOpen = signal<boolean>(false);
   previewNode = signal<DriveNode | null>(null);
@@ -97,6 +94,20 @@ export class DriveComponent implements OnInit {
 
   currentFiles = computed(() => {
     return this.filteredNodes().filter((n) => n.type === 'file');
+  });
+
+  existingFolderNames = computed(() => {
+    return this.currentFolders().map((f) => f.name);
+  });
+
+  existingFileNames = computed(() => {
+    return this.currentFiles().map((f) => f.name);
+  });
+
+  siblingNodesForRename = computed(() => {
+    const node = this.nodeToRename();
+    if (!node) return [];
+    return node.type === 'folder' ? this.currentFolders() : this.currentFiles();
   });
 
   ngOnInit(): void {
@@ -212,8 +223,20 @@ export class DriveComponent implements OnInit {
     return this.isImageFile(node) || this.isVideoFile(node);
   }
 
+  openUploadModal(): void {
+    this.isUploadModalOpen.set(true);
+  }
+
+  closeUploadModal(): void {
+    this.isUploadModalOpen.set(false);
+  }
+
+  onFilesUploaded(): void {
+    this.loadFolder(this.currentFolderId());
+    this.loadStats();
+  }
+
   openCreateFolderModal(): void {
-    this.newFolderName.set('');
     this.isCreateFolderOpen.set(true);
   }
 
@@ -221,57 +244,54 @@ export class DriveComponent implements OnInit {
     this.isCreateFolderOpen.set(false);
   }
 
-  onNewFolderNameInput(e: Event): void {
-    this.newFolderName.set((e.target as HTMLInputElement).value);
-  }
-
-  submitCreateFolder(): void {
-    const name = this.newFolderName().trim();
-    if (!name) {
-      this.snackbar.warning('Please enter a folder name.');
-      return;
-    }
-
-    this.isActionSubmitting.set(true);
-    const uploader = this.authService.currentUser()?.name || 'User';
-
-    this.driveService.createFolder(name, this.currentFolderId(), uploader).subscribe({
-      next: (created) => {
-        this.isActionSubmitting.set(false);
-        this.closeCreateFolderModal();
-        this.snackbar.success(`Folder "${created.name}" created!`);
-        this.loadFolder(this.currentFolderId());
-        this.loadStats();
-      },
-      error: () => {
-        this.isActionSubmitting.set(false);
-        this.snackbar.error('Failed to create folder.');
-      },
-    });
+  onFolderCreated(): void {
+    this.loadFolder(this.currentFolderId());
+    this.loadStats();
   }
 
   async onUploadFileInput(e: Event): Promise<void> {
     const input = e.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
-    // No `isLoading` here: the upload already owns the global overlay for the
-    // whole batch, and this page's own loader would only surface in the gaps
-    // between files — a second, different spinner blinking in and out. The
-    // reload below raises the overlay again in the same synchronous block, so
-    // the hand-off never reaches a paint.
-    const outcome = await this.mediaUpload.readAndUploadToDrive(Array.from(input.files), {
-      uploadedBy: this.authService.currentUser()?.name || 'User',
-      driveParentId: this.currentFolderId(),
-    });
-    this.mediaUpload.report(outcome);
+    const files = Array.from(input.files);
+    const existingFileNames = new Set(this.currentFiles().map((f) => f.name.toLowerCase().trim()));
 
-    this.loadFolder(this.currentFolderId());
-    this.loadStats();
+    const validFiles: File[] = [];
+    const duplicateFileNames: string[] = [];
+    const seenInBatch = new Set<string>();
+
+    for (const file of files) {
+      const normalized = file.name.toLowerCase().trim();
+      if (existingFileNames.has(normalized) || seenInBatch.has(normalized)) {
+        duplicateFileNames.push(file.name);
+      } else {
+        seenInBatch.add(normalized);
+        validFiles.push(file);
+      }
+    }
+
+    if (validFiles.length > 0) {
+      const outcome = await this.mediaUpload.readAndUploadToDrive(validFiles, {
+        uploadedBy: this.authService.currentUser()?.name || 'User',
+        driveParentId: this.currentFolderId(),
+      });
+      outcome.duplicates.push(...duplicateFileNames);
+      this.mediaUpload.report(outcome);
+
+      this.loadFolder(this.currentFolderId());
+      this.loadStats();
+    } else {
+      this.mediaUpload.report({
+        uploaded: [],
+        tooLarge: [],
+        duplicates: duplicateFileNames,
+        failed: [],
+      });
+    }
   }
 
   openRenameModal(node: DriveNode): void {
     this.nodeToRename.set(node);
-    this.renameValue.set(node.name);
     this.isRenameOpen.set(true);
   }
 
@@ -280,28 +300,8 @@ export class DriveComponent implements OnInit {
     this.nodeToRename.set(null);
   }
 
-  onRenameInput(e: Event): void {
-    this.renameValue.set((e.target as HTMLInputElement).value);
-  }
-
-  submitRename(): void {
-    const node = this.nodeToRename();
-    const newName = this.renameValue().trim();
-    if (!node || !newName) return;
-
-    this.isActionSubmitting.set(true);
-    this.driveService.renameNode(node.id, newName).subscribe({
-      next: () => {
-        this.isActionSubmitting.set(false);
-        this.closeRenameModal();
-        this.snackbar.success(`Renamed to "${newName}"`);
-        this.loadFolder(this.currentFolderId());
-      },
-      error: () => {
-        this.isActionSubmitting.set(false);
-        this.snackbar.error('Failed to rename item.');
-      },
-    });
+  onNodeRenamed(): void {
+    this.loadFolder(this.currentFolderId());
   }
 
   openPreview(node: DriveNode): void {

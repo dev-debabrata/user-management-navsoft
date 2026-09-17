@@ -13,13 +13,16 @@
   </app-page-header>
 
   <!-- Global Image Upload Modal Dialog -->
-  <app-image-upload-modal
+  <app-upload-modal
     [isOpen]="showUploadModal()"
-    [existingImages]="images()"
+    [existingNames]="existingImageNames()"
+    target="gallery"
+    accept="image/png, image/jpeg, image/webp, image/gif, image/svg+xml"
+    [maxSizeMb]="2"
     title="Upload Images"
     (close)="closeUploadModal()"
     (uploaded)="onImagesUploaded($event)"
-  ></app-image-upload-modal>
+  ></app-upload-modal>
 
   <!-- Active Magnifier Inspector Section -->
   @if (activeImage(); as active) {

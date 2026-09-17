@@ -407,8 +407,9 @@ textarea:-ms-input-placeholder {
     background: transparent !important;
     box-shadow: none !important;
     padding: 0 !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     overflow: visible !important;
+    min-height: auto !important;
   }
 
   .mdc-snackbar__label {

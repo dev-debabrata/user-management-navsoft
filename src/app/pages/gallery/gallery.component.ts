@@ -12,11 +12,11 @@ import { PacedWriteOutcome, runPacedWrites } from '../../core/utils/write-pacing
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ImageMagnifierComponent } from '../../shared/components/image-magnifier/image-magnifier.component';
-import { ImageUploadModalComponent } from '../../shared/components/image-upload-modal/image-upload-modal.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.component';
+import { UploadModalComponent } from '../../shared/components/upload-modal/upload-modal.component';
 
 @Component({
   selector: 'app-gallery',
@@ -25,7 +25,7 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
     CommonModule,
     PageHeaderComponent,
     UiButtonComponent,
-    ImageUploadModalComponent,
+    UploadModalComponent,
     ImageMagnifierComponent,
     SearchInputComponent,
     ConfirmDialogComponent,
@@ -57,6 +57,8 @@ export class GalleryComponent implements OnInit {
 
   formatBytes = formatBytes;
   formatDate = formatDate;
+
+  existingImageNames = computed(() => this.images().map((img) => img.name));
 
   maxVisibleThumbnails = 8;
   magnifierZoom = 3;

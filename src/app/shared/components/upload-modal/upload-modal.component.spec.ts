@@ -5,29 +5,38 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import {
   AlertCircle,
+  CheckCircle2,
+  File as FileIcon,
+  FileArchive,
+  FileCode,
+  FileImage,
+  FilePlay,
+  FileSpreadsheet,
+  FileText,
+  Folder,
+  Info,
   LucideAngularModule,
   Maximize2,
+  Music,
   Plus,
+  Presentation,
   Search,
   Trash2,
   TriangleAlert,
   Upload,
   X,
 } from 'lucide-angular';
-import { of } from 'rxjs';
-import { ImageItem, ImageUploadPreview } from '../../../core/models/image.model';
-import { ImageService } from '../../../core/services/image.service';
-import { ImageUploadModalComponent } from './image-upload-modal.component';
+import { UploadModalComponent } from './upload-modal.component';
 
-describe('ImageUploadModalComponent', () => {
-  let fixture: ComponentFixture<ImageUploadModalComponent>;
-  let component: ImageUploadModalComponent;
+describe('UploadModalComponent', () => {
+  let fixture: ComponentFixture<UploadModalComponent>;
+  let component: UploadModalComponent;
 
   const dummyFile = new File(['dummy content'], 'dummy.png', { type: 'image/png' });
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ImageUploadModalComponent],
+      imports: [UploadModalComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -35,8 +44,20 @@ describe('ImageUploadModalComponent', () => {
         importProvidersFrom(
           LucideAngularModule.pick({
             AlertCircle,
+            CheckCircle2,
+            File: FileIcon,
+            FileArchive,
+            FileCode,
+            FileImage,
+            FilePlay,
+            FileSpreadsheet,
+            FileText,
+            Folder,
+            Info,
             Maximize2,
+            Music,
             Plus,
+            Presentation,
             Search,
             Trash2,
             TriangleAlert,
@@ -44,24 +65,10 @@ describe('ImageUploadModalComponent', () => {
             X,
           }),
         ),
-        {
-          provide: ImageService,
-          useValue: {
-            processFileForPreview: (f: File) =>
-              Promise.resolve({
-                file: f,
-                name: f.name,
-                size: f.size,
-                type: f.type,
-                dataUrl: 'data:image/png;base64,sample',
-              }),
-            getImages: () => of([]),
-          },
-        },
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ImageUploadModalComponent);
+    fixture = TestBed.createComponent(UploadModalComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
@@ -107,18 +114,8 @@ describe('ImageUploadModalComponent', () => {
     expect(component.selectedPreviews().length).toBe(0);
   });
 
-  it('flags duplicate image as error if it already exists in the gallery', async () => {
-    fixture.componentRef.setInput('existingImages', [
-      {
-        id: 1,
-        name: 'existing-photo.jpg',
-        url: 'data:...',
-        size: 200,
-        type: 'image/jpeg',
-        uploadedBy: 'Tester',
-        createdAt: '2026-01-01',
-      },
-    ]);
+  it('flags duplicate file as error if it already exists in existingNames', async () => {
+    fixture.componentRef.setInput('existingNames', ['existing-photo.jpg']);
     fixture.detectChanges();
 
     const file = new File(['123'], 'existing-photo.jpg', { type: 'image/jpeg' });
@@ -126,7 +123,7 @@ describe('ImageUploadModalComponent', () => {
 
     const previews = component.selectedPreviews();
     expect(previews.length).toBe(1);
-    expect(previews[0].error).toContain('Duplicate: An image with this name already exists');
+    expect(previews[0].error).toContain('Duplicate: A file with this name already exists');
     expect(component.validPreviewsCount()).toBe(0);
   });
 
@@ -139,7 +136,7 @@ describe('ImageUploadModalComponent', () => {
     const previews = component.selectedPreviews();
     expect(previews.length).toBe(2);
     expect(previews[0].error).toBeUndefined();
-    expect(previews[1].error).toContain('Duplicate: Image already added to this selection');
+    expect(previews[1].error).toContain('Duplicate: File already added');
     expect(component.validPreviewsCount()).toBe(1);
   });
 });
