@@ -61,7 +61,7 @@ export class LoginComponent {
 
           const returnUrl = this.route.snapshot.queryParams['returnUrl'];
           if (returnUrl && returnUrl !== '/' && returnUrl !== '') {
-            this.router.navigateByUrl(returnUrl);
+            this.router.navigateByUrl(returnUrl, { replaceUrl: true });
           } else {
             this.authService.redirectAfterLogin(user.role);
           }

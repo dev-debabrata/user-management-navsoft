@@ -176,7 +176,7 @@ export class AuthService {
         : target === 'manager'
           ? '/manager/dashboard'
           : '/user/dashboard';
-    this.router.navigate([dest]);
+    this.router.navigate([dest], { replaceUrl: true });
   }
 
   getToken(): string | null {
