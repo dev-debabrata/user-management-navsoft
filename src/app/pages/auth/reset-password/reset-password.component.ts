@@ -37,6 +37,16 @@ export class ResetPasswordComponent implements OnInit {
 
   isLoading = signal<boolean>(false);
   errorMessage = signal<string>('');
+  showNewPassword = signal<boolean>(false);
+  showConfirmPassword = signal<boolean>(false);
+
+  toggleShowNewPassword(): void {
+    this.showNewPassword.update((v) => !v);
+  }
+
+  toggleShowConfirmPassword(): void {
+    this.showConfirmPassword.update((v) => !v);
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.queryParams['userId'];

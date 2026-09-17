@@ -37,6 +37,16 @@ export class SignupComponent {
 
   isLoading = signal<boolean>(false);
   errorMessage = signal<string>('');
+  showPassword = signal<boolean>(false);
+  showConfirmPassword = signal<boolean>(false);
+
+  toggleShowPassword(): void {
+    this.showPassword.update((v) => !v);
+  }
+
+  toggleShowConfirmPassword(): void {
+    this.showConfirmPassword.update((v) => !v);
+  }
 
   isFieldInvalid(name: string): boolean {
     const control = this.form.get(name);
