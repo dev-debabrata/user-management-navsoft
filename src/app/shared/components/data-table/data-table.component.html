@@ -105,13 +105,18 @@
                       <button
                         type="button"
                         class="sort-btn"
+                        [class.is-sorted]="sort() === col.key"
                         [title]="'Sort by ' + col.header"
                         (click)="toggleSort(col.key)"
                       >
-                        <span>{{ col.header }}</span>
+                        <span class="header-label">{{ col.header }}</span>
                         <lucide-icon
                           class="sort-icon"
-                          [name]="sortIcon(col.key)"
+                          [class.is-active]="sort() === col.key"
+                          [class.is-neutral]="sort() !== col.key"
+                          [name]="
+                            sort() === col.key && order() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
                           [size]="14"
                         ></lucide-icon>
                       </button>

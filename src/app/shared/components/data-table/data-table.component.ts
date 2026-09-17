@@ -78,8 +78,8 @@ export class DataTableComponent {
   }
 
   sortIcon(key: string): string {
-    if (this.sort() !== key) return 'arrow-up';
-    return this.order() === 'asc' ? 'arrow-up' : 'arrow-down';
+    if (this.sort() === key && this.order() === 'asc') return 'arrow-up';
+    return 'arrow-down';
   }
 
   ariaSort(key: string): 'ascending' | 'descending' | 'none' {
