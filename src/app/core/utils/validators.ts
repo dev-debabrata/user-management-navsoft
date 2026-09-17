@@ -1,9 +1,23 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { isValidPhoneNumber, validatePhoneNumberLength } from 'libphonenumber-js';
+import { phoneRulesForDial, splitPhone } from './countries';
 
 export class AppValidators {
-  /**
-   * Password strength validator: minimum 8 characters, at least 1 uppercase, 1 lowercase, 1 number, and 1 special character
-   */
+  static phoneNumber(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = (control.value ?? '').trim();
+      if (!value) return null;
+
+      const { dial, number } = splitPhone(value);
+      if (!number) return null;
+
+      if (!validatePhoneNumberLength(value) && isValidPhoneNumber(value)) return null;
+
+      const rules = phoneRulesForDial(dial);
+      return { phone: { country: rules.country, dial, expected: rules.digits } };
+    };
+  }
+
   static passwordStrength(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const val = control.value;
@@ -28,9 +42,6 @@ export class AppValidators {
     };
   }
 
-  /**
-   * Password match validator to be applied on a FormGroup
-   */
   static match(controlName: string, matchingControlName: string): ValidatorFn {
     return (group: AbstractControl): ValidationErrors | null => {
       const control = group.get(controlName);

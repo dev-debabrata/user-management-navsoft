@@ -1,3 +1,5 @@
+import { Role } from '../models/user.model';
+
 export function formatBytes(bytes: number = 0, decimals: number = 1): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -18,10 +20,10 @@ export function formatDate(dateStr?: string): string {
   if (!dateStr) return '-';
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', {
+    return d.toLocaleDateString('en-GB', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     });
   } catch {
     return dateStr;
@@ -41,5 +43,20 @@ export function formatDateTime(dateStr?: string): string {
     });
   } catch {
     return dateStr;
+  }
+}
+
+/**
+ * Badge colour for a role. Shared so the user table and the user detail dialog
+ * cannot drift apart on what an admin or a manager looks like.
+ */
+export function roleBadgeVariant(role: Role): 'primary' | 'purple' | 'indigo' {
+  switch (role) {
+    case 'admin':
+      return 'primary';
+    case 'manager':
+      return 'purple';
+    default:
+      return 'indigo';
   }
 }

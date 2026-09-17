@@ -3,6 +3,7 @@ import { Injectable, computed, signal } from '@angular/core';
 export interface LightboxImage {
   url: string;
   title?: string;
+  mimeType?: string;
 }
 
 @Injectable({

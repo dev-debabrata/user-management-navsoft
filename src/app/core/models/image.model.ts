@@ -1,8 +1,8 @@
 export interface ImageItem {
   id: string | number;
   name: string;
-  url: string; // Base64 or URL
-  size: number; // in bytes
+  url: string; 
+  size: number; 
   type: string;
   dimensions?: { width: number; height: number };
   uploadedBy: string;

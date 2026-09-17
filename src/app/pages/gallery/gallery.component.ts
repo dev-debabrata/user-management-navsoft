@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { LucideAngularModule } from 'lucide-angular';
 import { ImageItem, ImageUploadPreview } from '../../core/models/image.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ImageModalService } from '../../core/services/image-modal.service';
 import { ImageService } from '../../core/services/image.service';
+import { MediaUploadService } from '../../core/services/media-upload.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
 import { formatBytes, formatDate } from '../../core/utils/formatters';
+import { PacedWriteOutcome, runPacedWrites } from '../../core/utils/write-pacing';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { FileDropZoneComponent } from '../../shared/components/file-drop-zone/file-drop-zone.component';
@@ -29,12 +31,14 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
     ConfirmDialogComponent,
     EmptyStateComponent,
     LoaderComponent,
+    LucideAngularModule,
   ],
   templateUrl: './gallery.component.html',
   styleUrl: './gallery.component.css',
 })
 export class GalleryComponent implements OnInit {
   private imageService = inject(ImageService);
+  private mediaUpload = inject(MediaUploadService);
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
   modalService = inject(ImageModalService);
@@ -49,13 +53,17 @@ export class GalleryComponent implements OnInit {
   selectedPreviews = signal<ImageUploadPreview[]>([]);
   activeImage = signal<ImageItem | null>(null);
 
+  selectedIds = signal<Set<string | number>>(new Set());
+
+  pendingDeletes = signal<ImageItem[]>([]);
   isDeleteModalOpen = signal<boolean>(false);
-  imageToDelete = signal<ImageItem | null>(null);
 
   formatBytes = formatBytes;
   formatDate = formatDate;
 
   maxVisibleThumbnails = 8;
+
+  magnifierZoom = 6;
 
   validPreviewsCount = computed(() => {
     return this.selectedPreviews().filter((p) => !p.error && p.dataUrl).length;
@@ -87,6 +95,31 @@ export class GalleryComponent implements OnInit {
 
   overflowThumbnailsCount = computed(() => {
     return Math.max(0, this.images().length - this.maxVisibleThumbnails);
+  });
+
+  selectedImages = computed(() => {
+    const ids = this.selectedIds();
+    return this.images().filter((img) => ids.has(img.id));
+  });
+
+  selectedCount = computed(() => this.selectedIds().size);
+
+  deleteDialog = computed(() => {
+    const pending = this.pendingDeletes();
+    const single = pending.length === 1;
+    return {
+      title: single ? 'Delete Image' : 'Delete Selected Images',
+      confirmText: single ? 'Delete' : 'Delete All',
+      message: single
+        ? `Are you sure you want to permanently delete image ${pending[0].name}?`
+        : `Are you sure you want to permanently delete ${pending.length} selected images?`,
+    };
+  });
+
+  allFilteredSelected = computed(() => {
+    const list = this.filteredImages();
+    const ids = this.selectedIds();
+    return list.length > 0 && list.every((img) => ids.has(img.id));
   });
 
   ngOnInit(): void {
@@ -134,40 +167,27 @@ export class GalleryComponent implements OnInit {
     this.selectedPreviews.set([]);
   }
 
-  uploadAll(): void {
+  async uploadAll(): Promise<void> {
     const valid = this.selectedPreviews().filter((p) => !p.error && p.dataUrl);
     if (valid.length === 0) return;
 
     this.isUploading.set(true);
-    const uploaderName = this.authService.currentUser()?.name || 'User';
 
-    const calls = valid.map((item) =>
-      this.imageService.uploadImage({
-        name: item.name,
-        url: item.dataUrl,
-        size: item.size,
-        type: item.type,
-        dimensions: item.dimensions,
-        uploadedBy: uploaderName,
-      }),
+    const outcome = await this.mediaUpload.uploadToGallery(
+      valid.map((p) => ({ name: p.name, size: p.size, type: p.type, dataUrl: p.dataUrl })),
+      { uploadedBy: this.authService.currentUser()?.name || 'User' },
     );
+    this.mediaUpload.report(outcome, 'Gallery');
+    this.isUploading.set(false);
 
-    forkJoin(calls).subscribe({
-      next: (created) => {
-        this.isUploading.set(false);
-        this.clearPreviews();
-        this.showUploader.set(false);
-        this.snackbar.success(`Successfully uploaded ${created.length} image(s)!`);
-        if (created.length > 0) {
-          this.activeImage.set(created[0]);
-        }
-        this.fetchImages();
-      },
-      error: () => {
-        this.isUploading.set(false);
-        this.snackbar.error('Failed to upload some images. Please try again.');
-      },
-    });
+    const landed = new Set(outcome.uploaded);
+    this.selectedPreviews.update((curr) => curr.filter((p) => !landed.has(p.name)));
+
+    if (outcome.uploaded.length > 0) {
+      this.showUploader.set(false);
+      this.activeImage.set(null);
+      this.fetchImages();
+    }
   }
 
   setActiveImage(image: ImageItem): void {
@@ -194,35 +214,98 @@ export class GalleryComponent implements OnInit {
   }
 
   confirmDeleteImage(image: ImageItem): void {
-    this.imageToDelete.set(image);
-    this.isDeleteModalOpen.set(true);
+    this.openDeleteModal([image]);
+  }
+
+  confirmDeleteSelected(): void {
+    this.openDeleteModal(this.selectedImages());
   }
 
   closeDeleteModal(): void {
     this.isDeleteModalOpen.set(false);
-    this.imageToDelete.set(null);
+    this.pendingDeletes.set([]);
   }
 
-  submitDeleteImage(): void {
-    const img = this.imageToDelete();
-    if (!img) return;
+  async submitDelete(): Promise<void> {
+    const targets = this.pendingDeletes();
+    if (targets.length === 0) return;
 
     this.isDeleting.set(true);
-    this.imageService.deleteImage(img.id).subscribe({
-      next: () => {
-        this.isDeleting.set(false);
-        this.closeDeleteModal();
-        this.snackbar.success(`Image "${img.name}" deleted.`);
+    const outcome = await runPacedWrites(targets, (img) => this.imageService.deleteImage(img.id));
+    this.finishDelete(outcome, targets.length);
+  }
 
-        if (this.activeImage()?.id === img.id) {
-          this.activeImage.set(null);
-        }
-        this.fetchImages();
-      },
-      error: () => {
-        this.isDeleting.set(false);
-        this.snackbar.error('Failed to delete image.');
-      },
+  private openDeleteModal(targets: ImageItem[]): void {
+    if (targets.length === 0) return;
+    this.pendingDeletes.set(targets);
+    this.isDeleteModalOpen.set(true);
+  }
+
+  private finishDelete(outcome: PacedWriteOutcome<ImageItem>, total: number): void {
+    this.isDeleting.set(false);
+    this.closeDeleteModal();
+
+    const removed = outcome.done;
+
+    if (removed.length === total) {
+      this.snackbar.success(
+        total === 1 ? `Image "${removed[0].name}" deleted.` : `Deleted ${total} images.`,
+      );
+    } else if (outcome.aborted) {
+      // The connection dropped, so the rest were never attempted.
+      this.snackbar.warning(
+        `Deleted ${removed.length} of ${total} images before the API stopped responding. ` +
+          'Check that `npm run api` is still running, then delete the rest.',
+      );
+    } else if (removed.length > 0) {
+      this.snackbar.warning(`Deleted ${removed.length} of ${total} images. Please retry the rest.`);
+    } else {
+      this.snackbar.error('Failed to delete images. Please try again.');
+    }
+
+    if (removed.length === 0) return;
+    this.forgetImages(removed.map((img) => img.id));
+    this.fetchImages();
+  }
+
+  isSelected(id: string | number): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  toggleSelection(id: string | number): void {
+    this.editSelection((ids) => {
+      if (!ids.delete(id)) ids.add(id);
     });
+  }
+
+  toggleSelectAll(): void {
+    const selectAll = !this.allFilteredSelected();
+    this.editSelection((ids) => {
+      for (const img of this.filteredImages()) {
+        if (selectAll) ids.add(img.id);
+        else ids.delete(img.id);
+      }
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  private editSelection(mutate: (ids: Set<string | number>) => void): void {
+    this.selectedIds.update((curr) => {
+      const next = new Set(curr);
+      mutate(next);
+      return next;
+    });
+  }
+
+  private forgetImages(ids: (string | number)[]): void {
+    this.editSelection((set) => ids.forEach((id) => set.delete(id)));
+
+    const active = this.activeImage();
+    if (active && ids.includes(active.id)) {
+      this.activeImage.set(null);
+    }
   }
 }

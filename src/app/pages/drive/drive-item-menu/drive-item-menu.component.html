@@ -1,0 +1,25 @@
+<div class="menu-backdrop" (click)="closed.emit()"></div>
+<div class="drive-context-menu" [class.drop-up]="dropUp()" (click)="$event.stopPropagation()">
+  @if (isFile) {
+    <button type="button" class="menu-item" (click)="emit('preview')">
+      <lucide-icon name="eye" [size]="14"></lucide-icon>
+      <span>Preview</span>
+    </button>
+    <button type="button" class="menu-item" (click)="emit('download')">
+      <lucide-icon name="download" [size]="14"></lucide-icon>
+      <span>Download</span>
+    </button>
+  }
+
+  <button type="button" class="menu-item" (click)="emit('rename')">
+    <lucide-icon name="square-pen" [size]="14"></lucide-icon>
+    <span>Rename</span>
+  </button>
+
+  <div class="menu-divider"></div>
+
+  <button type="button" class="menu-item text-danger" (click)="emit('remove')">
+    <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+    <span>Move to bin</span>
+  </button>
+</div>

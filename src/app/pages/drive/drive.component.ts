@@ -2,19 +2,28 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { LucideAngularModule } from 'lucide-angular';
 import { BreadcrumbItem, DriveNode, DriveStats } from '../../core/models/drive.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DRIVE_ROOT, DriveService } from '../../core/services/drive.service';
 import { ImageModalService } from '../../core/services/image-modal.service';
+import { MediaUploadService } from '../../core/services/media-upload.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
+import { openDataUrlInNewTab } from '../../core/utils/data-url';
+import { isImageType, isVideoType } from '../../core/utils/file-types';
 import { formatBytes, formatDate, getInitials } from '../../core/utils/formatters';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { FileTypeIconComponent } from '../../shared/components/file-type-icon/file-type-icon.component';
+import { DriveItemMenuComponent } from './drive-item-menu/drive-item-menu.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.component';
+
+const CONTEXT_MENU_HEIGHT_PX = 200;
 
 @Component({
   selector: 'app-drive',
@@ -26,14 +35,19 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
     SearchInputComponent,
     ModalComponent,
     ConfirmDialogComponent,
+    DriveItemMenuComponent,
     EmptyStateComponent,
+    FileTypeIconComponent,
+    IconButtonComponent,
     LoaderComponent,
+    LucideAngularModule,
   ],
   templateUrl: './drive.component.html',
   styleUrl: './drive.component.css',
 })
 export class DriveComponent implements OnInit {
   private driveService = inject(DriveService);
+  private mediaUpload = inject(MediaUploadService);
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
   private imageModalService = inject(ImageModalService);
@@ -51,7 +65,6 @@ export class DriveComponent implements OnInit {
   viewMode = signal<'grid' | 'list'>('grid');
   searchQuery = signal<string>('');
 
-  // Modals
   isCreateFolderOpen = signal<boolean>(false);
   newFolderName = signal<string>('');
 
@@ -65,8 +78,8 @@ export class DriveComponent implements OnInit {
   isDeleteOpen = signal<boolean>(false);
   nodeToDelete = signal<DriveNode | null>(null);
 
-  // Three-dot row context menu
   activeMenuNode = signal<DriveNode | null>(null);
+  menuDropUp = signal<boolean>(false);
 
   formatBytes = formatBytes;
   formatDate = formatDate;
@@ -173,9 +186,14 @@ export class DriveComponent implements OnInit {
     event.stopPropagation();
     if (this.activeMenuNode()?.id === node.id) {
       this.activeMenuNode.set(null);
-    } else {
-      this.activeMenuNode.set(node);
+      return;
     }
+
+    const trigger = (event.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+    const spaceBelow = trigger ? window.innerHeight - trigger.bottom : Number.POSITIVE_INFINITY;
+    this.menuDropUp.set(spaceBelow < CONTEXT_MENU_HEIGHT_PX);
+
+    this.activeMenuNode.set(node);
   }
 
   closeMenu(): void {
@@ -183,11 +201,17 @@ export class DriveComponent implements OnInit {
   }
 
   isImageFile(node: DriveNode): boolean {
-    if (!node.mimeType) return false;
-    return node.mimeType.startsWith('image/');
+    return isImageType(node.name, node.mimeType);
   }
 
-  // Create Folder
+  isVideoFile(node: DriveNode): boolean {
+    return isVideoType(node.name, node.mimeType);
+  }
+
+  isPlayableFile(node: DriveNode): boolean {
+    return this.isImageFile(node) || this.isVideoFile(node);
+  }
+
   openCreateFolderModal(): void {
     this.newFolderName.set('');
     this.isCreateFolderOpen.set(true);
@@ -226,36 +250,25 @@ export class DriveComponent implements OnInit {
     });
   }
 
-  // Upload Files
   async onUploadFileInput(e: Event): Promise<void> {
     const input = e.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
-    const files = Array.from(input.files);
-    this.isLoading.set(true);
-    const uploader = this.authService.currentUser()?.name || 'User';
+    // No `isLoading` here: the upload already owns the global overlay for the
+    // whole batch, and this page's own loader would only surface in the gaps
+    // between files — a second, different spinner blinking in and out. The
+    // reload below raises the overlay again in the same synchronous block, so
+    // the hand-off never reaches a paint.
+    const outcome = await this.mediaUpload.readAndUploadToDrive(Array.from(input.files), {
+      uploadedBy: this.authService.currentUser()?.name || 'User',
+      driveParentId: this.currentFolderId(),
+    });
+    this.mediaUpload.report(outcome);
 
-    for (const file of files) {
-      try {
-        const obs = await this.driveService.uploadFile(file, this.currentFolderId(), uploader);
-        await new Promise<void>((resolve, reject) => {
-          obs.subscribe({
-            next: () => resolve(),
-            error: (err) => reject(err),
-          });
-        });
-      } catch {
-        this.snackbar.error(`Failed to upload ${file.name}`);
-      }
-    }
-
-    this.snackbar.success(`Uploaded ${files.length} file(s) into current folder!`);
-    input.value = '';
     this.loadFolder(this.currentFolderId());
     this.loadStats();
   }
 
-  // Rename
   openRenameModal(node: DriveNode): void {
     this.nodeToRename.set(node);
     this.renameValue.set(node.name);
@@ -291,21 +304,32 @@ export class DriveComponent implements OnInit {
     });
   }
 
-  // Preview
   openPreview(node: DriveNode): void {
     if (node.type === 'folder') {
       this.navigateToFolder(node.id);
       return;
     }
-    if (this.isImageFile(node) && node.dataUrl) {
-      const allImageFiles = this.currentFiles()
-        .filter((f) => this.isImageFile(f) && f.dataUrl)
-        .map((f) => ({ url: f.dataUrl!, title: f.name }));
+    if (this.isPlayableFile(node) && node.dataUrl) {
+      const playable = this.currentFiles()
+        .filter((f) => this.isPlayableFile(f) && f.dataUrl)
+        .map((f) => ({ url: f.dataUrl!, title: f.name, mimeType: f.mimeType }));
 
-      const idx = allImageFiles.findIndex((f) => f.title === node.name);
-      this.imageModalService.open(allImageFiles, Math.max(0, idx));
+      const idx = playable.findIndex((f) => f.title === node.name);
+      this.imageModalService.open(playable, Math.max(0, idx));
       return;
     }
+
+    // Documents — PDF, Word, Excel, text — hand off to the browser, which shows
+    // what it can render and downloads the rest. The in-app modal was only ever
+    // a file-type icon and a Download button, so it stays as the fallback for a
+    // blocked pop-up or a node with no stored bytes.
+    if (node.dataUrl && openDataUrlInNewTab(node.dataUrl)) {
+      return;
+    }
+    if (node.dataUrl) {
+      this.snackbar.info(`Allow pop-ups to open "${node.name}" in a new tab.`);
+    }
+
     this.previewNode.set(node);
     this.isPreviewOpen.set(true);
   }

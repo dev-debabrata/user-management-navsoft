@@ -28,7 +28,7 @@ export class LoginComponent {
   ];
 
   form = this.fb.group({
-    role: [''],
+    role: ['', Validators.required],
     identifier: ['', Validators.required],
     password: ['', Validators.required],
   });
@@ -58,6 +58,8 @@ export class LoginComponent {
       icon: isUserRole ? 'user' : 'mail',
     };
   });
+
+  canResetPassword = computed(() => this.selectedRole().toLowerCase() === 'employee');
 
   onRoleChange(): void {
     this.selectedRole.set(this.form.get('role')?.value || '');

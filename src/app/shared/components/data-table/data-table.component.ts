@@ -61,12 +61,31 @@ export class DataTableComponent {
   showTotalCount = input<boolean>(true);
   matchingCountCalculator = input<((filters: ActiveFilterState) => number) | undefined>(undefined);
 
+  sort = input<string>('');
+  order = input<'asc' | 'desc'>('asc');
+
   searchChange = output<string>();
   pageChange = output<number>();
   limitChange = output<number>();
   filterChange = output<ActiveFilterState>();
+  sortChange = output<{ sort: string; order: 'asc' | 'desc' }>();
 
   isFilterDrawerOpen = signal<boolean>(false);
+
+  toggleSort(key: string): void {
+    const next: 'asc' | 'desc' = this.sort() === key && this.order() === 'asc' ? 'desc' : 'asc';
+    this.sortChange.emit({ sort: key, order: next });
+  }
+
+  sortIcon(key: string): string {
+    if (this.sort() !== key) return 'arrow-up';
+    return this.order() === 'asc' ? 'arrow-up' : 'arrow-down';
+  }
+
+  ariaSort(key: string): 'ascending' | 'descending' | 'none' {
+    if (this.sort() !== key) return 'none';
+    return this.order() === 'asc' ? 'ascending' : 'descending';
+  }
 
   openFilterDrawer(): void {
     this.isFilterDrawerOpen.set(true);
