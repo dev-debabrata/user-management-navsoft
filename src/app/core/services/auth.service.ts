@@ -54,11 +54,6 @@ export class AuthService {
     const input = (credentials.identifier || credentials.username || credentials.email || '')
       .trim()
       .toLowerCase();
-    const role = (credentials.role || '').trim().toLowerCase();
-
-    if (!role) {
-      return throwError(() => new Error('Please select a role to continue.'));
-    }
 
     return this.http.get<User[]>(`${environment.apiUrl}/users`).pipe(
       map((users) => {
@@ -70,7 +65,9 @@ export class AuthService {
             (input === 'manager' && u.role === 'manager');
 
           if (!matchId) return false;
-          if (u.role?.toLowerCase() !== role) return false;
+          if (credentials.role && u.role?.toLowerCase() !== credentials.role.trim().toLowerCase()) {
+            return false;
+          }
           return true;
         });
 
@@ -107,7 +104,7 @@ export class AuthService {
             name: payload.name.trim(),
             email,
             password: payload.password,
-            role: 'employee',
+            role: payload.role || 'employee',
             phone: payload.phone || '',
             department: payload.department || 'General',
             status: 'active',

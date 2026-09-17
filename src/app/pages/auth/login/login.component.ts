@@ -21,14 +21,7 @@ export class LoginComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  readonly roleOptions = [
-    { label: 'Admin', value: 'admin' },
-    { label: 'Manager', value: 'manager' },
-    { label: 'Employee', value: 'employee' },
-  ];
-
   form = this.fb.group({
-    role: ['', Validators.required],
     identifier: ['', Validators.required],
     password: ['', Validators.required],
   });
@@ -36,35 +29,6 @@ export class LoginComponent {
   isLoading = signal(false);
   showPassword = signal(false);
   errorMessage = signal('');
-  selectedRole = signal('');
-
-  roleConfig = computed(() => {
-    const role = this.selectedRole().toLowerCase();
-    const isUserRole = role === 'admin' || role === 'manager';
-    return {
-      label: isUserRole
-        ? 'Username'
-        : role === 'employee'
-          ? 'Email Address'
-          : 'Username / Email Address',
-      placeholder:
-        role === 'admin'
-          ? 'admin'
-          : role === 'manager'
-            ? 'manager'
-            : role === 'employee'
-              ? 'employee@gmail.com'
-              : 'Enter username or email',
-      icon: isUserRole ? 'user' : 'mail',
-    };
-  });
-
-  canResetPassword = computed(() => this.selectedRole().toLowerCase() === 'employee');
-
-  onRoleChange(): void {
-    this.selectedRole.set(this.form.get('role')?.value || '');
-    this.errorMessage.set('');
-  }
 
   toggleShowPassword(): void {
     this.showPassword.update((v) => !v);
@@ -88,7 +52,6 @@ export class LoginComponent {
     this.authService
       .login({
         identifier: val.identifier || undefined,
-        role: val.role || undefined,
         password: val.password || '',
       })
       .subscribe({

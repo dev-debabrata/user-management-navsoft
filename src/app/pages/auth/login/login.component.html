@@ -8,7 +8,7 @@
         <h2>UserManage</h2>
       </div>
       <h1 class="auth-title">Welcome Back</h1>
-      <p class="auth-subtitle">Select your role and enter credentials to access your portal</p>
+      <p class="auth-subtitle">Enter your credentials to access your portal</p>
     </div>
 
     @if (errorMessage()) {
@@ -19,47 +19,23 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
-      <!-- Role / Type Selector Dropdown -->
+      <!-- Username / Email Field -->
       <div class="form-group">
-        <label for="role">Select Role</label>
-        <div class="input-wrapper select-wrapper">
-          <select
-            id="role"
-            formControlName="role"
-            class="form-control form-select"
-            [class.is-invalid]="isFieldInvalid('role')"
-            (change)="onRoleChange()"
-          >
-            <option value="">Please Select</option>
-            @for (opt of roleOptions; track opt.value) {
-              <option [value]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-          <lucide-icon name="chevron-down" [size]="16" class="select-chevron"></lucide-icon>
-        </div>
-        @if (isFieldInvalid('role')) {
-          <div class="error-msg">Please select a role to continue.</div>
-        }
-      </div>
-
-      <!-- Dynamic Username / Email Field -->
-      @let cfg = roleConfig();
-      <div class="form-group">
-        <label for="identifier">{{ cfg.label }}</label>
+        <label for="identifier">Username / Email Address</label>
         <div class="input-wrapper">
-          <lucide-icon [name]="cfg.icon" [size]="16" class="input-icon"></lucide-icon>
+          <lucide-icon name="mail" [size]="16" class="input-icon"></lucide-icon>
           <input
             id="identifier"
             type="text"
             formControlName="identifier"
-            [placeholder]="cfg.placeholder"
+            placeholder="Enter username or email"
             class="form-control"
             [class.is-invalid]="isFieldInvalid('identifier')"
             autocomplete="username"
           />
         </div>
         @if (isFieldInvalid('identifier')) {
-          <div class="error-msg">{{ cfg.label }} is required.</div>
+          <div class="error-msg">Username or Email Address is required.</div>
         }
       </div>
 
@@ -89,11 +65,9 @@
         @if (isFieldInvalid('password')) {
           <div class="error-msg">Password is required.</div>
         }
-        @if (canResetPassword()) {
-          <div class="forgot-password-row">
-            <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
-          </div>
-        }
+        <div class="forgot-password-row">
+          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
       </div>
 
       <div class="form-action">

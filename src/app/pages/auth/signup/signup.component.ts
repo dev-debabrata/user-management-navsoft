@@ -35,6 +35,7 @@ export class SignupComponent {
     {
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
+      role: ['', [Validators.required]],
       department: ['Engineering'],
       phone: ['', [AppValidators.phoneNumber()]],
       password: ['', [Validators.required, AppValidators.passwordStrength()]],
@@ -78,6 +79,7 @@ export class SignupComponent {
       .signUp({
         name: val.name,
         email: val.email,
+        role: val.role,
         password: val.password,
         department: val.department,
         phone: val.phone,
