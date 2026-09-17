@@ -57,4 +57,29 @@ export class DriveContentComponent {
   onToggleMenu(node: DriveNode, event: MouseEvent): void {
     this.toggleMenu.emit({ node, event });
   }
+
+  isTouchOrMobile(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 1024 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  }
+
+  onFolderClick(folder: DriveNode): void {
+    if (this.isTouchOrMobile()) {
+      this.navigateToFolder.emit(folder.id);
+    }
+  }
+
+  onFolderDblClick(folder: DriveNode): void {
+    this.navigateToFolder.emit(folder.id);
+  }
+
+  onFileClick(file: DriveNode): void {
+    if (this.isTouchOrMobile()) {
+      this.preview.emit(file);
+    }
+  }
+
+  onFileDblClick(file: DriveNode): void {
+    this.preview.emit(file);
+  }
 }

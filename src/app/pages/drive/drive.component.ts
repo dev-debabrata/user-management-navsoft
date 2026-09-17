@@ -310,6 +310,14 @@ export class DriveComponent implements OnInit {
       this.navigateToFolder(node.id);
       return;
     }
+
+    // Direct web URL (e.g. Google Docs, Google Sheets, external link)
+    if (node.url) {
+      window.open(node.url, '_blank');
+      return;
+    }
+
+    // Images and Videos: in-app lightbox modal
     if (this.isPlayableFile(node) && node.dataUrl) {
       const playable = this.currentFiles()
         .filter((f) => this.isPlayableFile(f) && f.dataUrl)
@@ -320,15 +328,37 @@ export class DriveComponent implements OnInit {
       return;
     }
 
-    // Documents — PDF, Word, Excel, text — hand off to the browser, which shows
-    // what it can render and downloads the rest. The in-app modal was only ever
-    // a file-type icon and a Download button, so it stays as the fallback for a
-    // blocked pop-up or a node with no stored bytes.
+    // Documents (Word, Excel, PDF, Text, Markdown, etc.) with stored file data:
+    // Decodes and opens the real file data in a new tab.
     if (node.dataUrl && openDataUrlInNewTab(node.dataUrl)) {
       return;
     }
     if (node.dataUrl) {
       this.snackbar.info(`Allow pop-ups to open "${node.name}" in a new tab.`);
+    }
+
+    const ext = (node.name || '').split('.').pop()?.toLowerCase() || '';
+    const mime = (node.mimeType || '').toLowerCase();
+
+    // Word / Docs Document fallback if no dataUrl
+    const isDoc =
+      ['doc', 'docx', 'gdoc', 'rtf', 'odt'].includes(ext) ||
+      mime.includes('word') ||
+      mime.includes('document');
+    if (isDoc) {
+      window.open('https://docs.google.com/document/u/0/', '_blank');
+      return;
+    }
+
+    // Excel / Spreadsheet fallback if no dataUrl
+    const isExcel =
+      ['xls', 'xlsx', 'csv', 'gsheet', 'ods'].includes(ext) ||
+      mime.includes('excel') ||
+      mime.includes('spreadsheet') ||
+      mime.includes('csv');
+    if (isExcel) {
+      window.open('https://docs.google.com/spreadsheets/u/0/', '_blank');
+      return;
     }
 
     this.previewNode.set(node);

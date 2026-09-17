@@ -25,7 +25,8 @@
                 <div
                   class="folder-card"
                   [class.menu-open]="activeMenuNode()?.id === folder.id"
-                  (dblclick)="navigateToFolder.emit(folder.id)"
+                  (click)="onFolderClick(folder)"
+                  (dblclick)="onFolderDblClick(folder)"
                 >
                   <div class="folder-main">
                     <div class="folder-icon">
@@ -80,7 +81,8 @@
                 <div
                   class="file-card"
                   [class.menu-open]="activeMenuNode()?.id === file.id"
-                  (click)="preview.emit(file)"
+                  (click)="onFileClick(file)"
+                  (dblclick)="onFileDblClick(file)"
                 >
                   <div class="file-preview-area">
                     @if (isImageFile(file) && file.dataUrl) {
@@ -174,7 +176,8 @@
                 <tr
                   class="drive-row folder-row"
                   [class.menu-open]="activeMenuNode()?.id === folder.id"
-                  (dblclick)="navigateToFolder.emit(folder.id)"
+                  (click)="onFolderClick(folder)"
+                  (dblclick)="onFolderDblClick(folder)"
                 >
                   <td class="td-name">
                     <div class="item-name-cell">
@@ -249,7 +252,8 @@
                 <tr
                   class="drive-row file-row"
                   [class.menu-open]="activeMenuNode()?.id === file.id"
-                  (click)="preview.emit(file)"
+                  (click)="onFileClick(file)"
+                  (dblclick)="onFileDblClick(file)"
                 >
                   <td class="td-name">
                     <div class="item-name-cell">
