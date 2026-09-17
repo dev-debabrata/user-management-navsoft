@@ -152,7 +152,8 @@ export class UploadModalComponent {
     if (valid.length === 0) return;
 
     this.isUploading.set(true);
-    const uploader = this.authService.currentUser()?.name || 'User';
+    const user = this.authService.currentUser();
+    const uploader = user?.email || user?.name || 'User';
     const uploadItems = valid.map((p) => ({
       name: p.name,
       size: p.size,

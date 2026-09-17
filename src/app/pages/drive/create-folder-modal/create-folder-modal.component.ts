@@ -72,7 +72,8 @@ export class CreateFolderModalComponent {
     }
 
     this.isSubmitting.set(true);
-    const uploader = this.authService.currentUser()?.name || 'User';
+    const user = this.authService.currentUser();
+    const uploader = user?.email || user?.name || 'User';
 
     this.driveService.createFolder(name, this.parentId(), uploader).subscribe({
       next: (newNode) => {

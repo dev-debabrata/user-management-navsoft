@@ -271,8 +271,9 @@ export class DriveComponent implements OnInit {
     }
 
     if (validFiles.length > 0) {
+      const user = this.authService.currentUser();
       const outcome = await this.mediaUpload.readAndUploadToDrive(validFiles, {
-        uploadedBy: this.authService.currentUser()?.name || 'User',
+        uploadedBy: user?.email || user?.name || 'User',
         driveParentId: this.currentFolderId(),
       });
       outcome.duplicates.push(...duplicateFileNames);
