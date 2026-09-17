@@ -30,41 +30,60 @@ export class AuthService {
   currentRole = computed<Role | null>(() => this.sessionSignal()?.user?.role ?? null);
 
   constructor() {
-    // Check if session has expired on init
     if (this.sessionSignal() && this.isSessionExpired()) {
       this.clearSession();
+    } else if (this.sessionSignal()?.user?.id) {
+      this.refreshCurrentUser();
     }
   }
 
+  refreshCurrentUser(): void {
+    const currentId = this.sessionSignal()?.user?.id;
+    if (!currentId) return;
+    this.http
+      .get<User>(`${environment.apiUrl}/users/${currentId}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe((latestUser) => {
+        if (latestUser) {
+          this.setSession(latestUser);
+        }
+      });
+  }
+
   login(credentials: LoginCredentials): Observable<User> {
-    return this.http
-      .get<User[]>(`${environment.apiUrl}/users`, {
-        params: { email: credentials.email.trim().toLowerCase() },
-      })
-      .pipe(
-        map((users) => {
-          const user = users.find(
-            (u) => u.email.toLowerCase() === credentials.email.trim().toLowerCase(),
-          );
+    const input = (credentials.identifier || credentials.username || credentials.email || '')
+      .trim()
+      .toLowerCase();
+    const role = (credentials.role || '').trim().toLowerCase();
 
-          if (!user) {
-            throw new Error('No user found with this email address.');
-          }
+    return this.http.get<User[]>(`${environment.apiUrl}/users`).pipe(
+      map((users) => {
+        const user = users.find((u) => {
+          const matchId =
+            u.email?.toLowerCase() === input ||
+            u.username?.toLowerCase() === input ||
+            (input === 'admin' && u.role === 'admin') ||
+            (input === 'manager' && u.role === 'manager');
 
-          if (user.password !== credentials.password) {
-            throw new Error('Invalid email or password.');
-          }
+          if (!matchId) return false;
+          if (role && u.role?.toLowerCase() !== role) return false;
+          return true;
+        });
 
-          if (user.status === 'inactive') {
-            throw new Error('Your account has been deactivated. Please contact an administrator.');
-          }
+        if (!user) {
+          throw new Error('No account found matching the provided credentials.');
+        }
+        if (user.password !== credentials.password) {
+          throw new Error('Invalid username/email or password.');
+        }
+        if (user.status === 'inactive') {
+          throw new Error('Your account has been deactivated. Please contact an administrator.');
+        }
 
-          return user;
-        }),
-        tap((user) => {
-          this.setSession(user);
-        }),
-      );
+        return user;
+      }),
+      tap((user) => this.setSession(user)),
+    );
   }
 
   signUp(payload: SignUpPayload): Observable<User> {
@@ -84,7 +103,7 @@ export class AuthService {
             name: payload.name.trim(),
             email,
             password: payload.password,
-            role: 'user',
+            role: 'employee',
             phone: payload.phone || '',
             department: payload.department || 'General',
             status: 'active',
@@ -145,33 +164,22 @@ export class AuthService {
 
   hasRole(...roles: Role[]): boolean {
     const current = this.currentRole();
-    if (!current) return false;
-    // 'user' and 'viewer' are treated as general users
-    if (roles.includes(current)) return true;
-    if (roles.includes('user') && current === 'viewer') return true;
-    return false;
+    return !!current && roles.includes(current);
   }
 
   redirectAfterLogin(role?: Role): void {
-    const targetRole = role || this.currentRole();
-    switch (targetRole) {
-      case 'admin':
-        this.router.navigate(['/admin/dashboard']);
-        break;
-      case 'manager':
-        this.router.navigate(['/manager/dashboard']);
-        break;
-      case 'user':
-      case 'viewer':
-      default:
-        this.router.navigate(['/user/dashboard']);
-        break;
-    }
+    const target = role || this.currentRole();
+    const dest =
+      target === 'admin'
+        ? '/admin/dashboard'
+        : target === 'manager'
+          ? '/manager/dashboard'
+          : '/user/dashboard';
+    this.router.navigate([dest]);
   }
 
   getToken(): string | null {
-    const session = this.sessionSignal();
-    return session ? session.token : null;
+    return this.sessionSignal()?.token ?? null;
   }
 
   private setSession(user: User): void {
@@ -218,7 +226,6 @@ export class AuthService {
 
   private isSessionExpired(): boolean {
     const session = this.sessionSignal();
-    if (!session) return true;
-    return Date.now() > session.expiresAt;
+    return !session || Date.now() > session.expiresAt;
   }
 }

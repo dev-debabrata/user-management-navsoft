@@ -45,7 +45,6 @@ export class AppShellComponent {
   isUserMenuOpen = signal<boolean>(false);
 
   currentUser = this.authService.currentUser;
-
   userInitials = computed(() => getInitials(this.currentUser()?.name || ''));
 
   allNavItems: NavItem[] = [
@@ -64,7 +63,7 @@ export class AppShellComponent {
     {
       label: 'My Dashboard',
       route: '/user/dashboard',
-      roles: ['user', 'viewer'],
+      roles: ['employee'],
       iconName: 'home',
     },
     {
@@ -76,30 +75,26 @@ export class AppShellComponent {
     {
       label: 'File & Drive Manager',
       route: '/drive',
-      roles: ['admin', 'manager', 'user', 'viewer'],
+      roles: ['admin', 'manager', 'employee'],
       iconName: 'folder',
     },
     {
       label: 'Image Gallery & Zoom',
       route: '/gallery',
-      roles: ['admin', 'manager', 'user', 'viewer'],
+      roles: ['admin', 'manager', 'employee'],
       iconName: 'image',
     },
     {
       label: 'Profile & Security',
       route: '/profile',
-      roles: ['admin', 'manager', 'user', 'viewer'],
+      roles: ['admin', 'manager', 'employee'],
       iconName: 'user',
     },
   ];
 
   filteredNavItems = computed(() => {
-    const role = this.currentUser()?.role || 'user';
-    return this.allNavItems.filter((item) => {
-      if (item.roles.includes(role)) return true;
-      if (item.roles.includes('user') && role === 'viewer') return true;
-      return false;
-    });
+    const role = this.currentUser()?.role || 'employee';
+    return this.allNavItems.filter((item) => item.roles.includes(role));
   });
 
   toggleSidebar(): void {
@@ -127,16 +122,9 @@ export class AppShellComponent {
     this.authService.logout(true);
   }
 
-  getRoleBadgeVariant(role: string): 'primary' | 'purple' | 'success' | 'indigo' | 'neutral' {
-    switch (role) {
-      case 'admin':
-        return 'primary';
-      case 'manager':
-        return 'purple';
-      case 'user':
-      case 'viewer':
-      default:
-        return 'indigo';
-    }
+  getRoleBadgeVariant(role: string): 'primary' | 'purple' | 'indigo' {
+    if (role === 'admin') return 'primary';
+    if (role === 'manager') return 'purple';
+    return 'indigo';
   }
 }

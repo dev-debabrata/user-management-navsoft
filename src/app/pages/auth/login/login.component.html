@@ -8,7 +8,7 @@
         <h2>UserManage</h2>
       </div>
       <h1 class="auth-title">Welcome Back</h1>
-      <p class="auth-subtitle">Sign in with your email and password to access your portal</p>
+      <p class="auth-subtitle">Select your role and enter credentials to access your portal</p>
     </div>
 
     @if (errorMessage()) {
@@ -19,30 +19,47 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+      <!-- Role / Type Selector Dropdown -->
       <div class="form-group">
-        <label for="email">Email Address</label>
+        <label for="role">Select Role</label>
+        <div class="input-wrapper select-wrapper">
+          <select
+            id="role"
+            formControlName="role"
+            class="form-control form-select"
+            (change)="onRoleChange()"
+          >
+            <option value="">Please Select</option>
+            @for (opt of roleOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <lucide-icon name="chevron-down" [size]="16" class="select-chevron"></lucide-icon>
+        </div>
+      </div>
+
+      <!-- Dynamic Username / Email Field -->
+      @let cfg = roleConfig();
+      <div class="form-group">
+        <label for="identifier">{{ cfg.label }}</label>
         <div class="input-wrapper">
-          <lucide-icon name="mail" [size]="16" class="input-icon"></lucide-icon>
+          <lucide-icon [name]="cfg.icon" [size]="16" class="input-icon"></lucide-icon>
           <input
-            id="email"
-            type="email"
-            formControlName="email"
-            placeholder="admin@demo.com"
+            id="identifier"
+            type="text"
+            formControlName="identifier"
+            [placeholder]="cfg.placeholder"
             class="form-control"
-            [class.is-invalid]="isFieldInvalid('email')"
+            [class.is-invalid]="isFieldInvalid('identifier')"
+            autocomplete="username"
           />
         </div>
-        @if (isFieldInvalid('email')) {
-          <div class="error-msg">
-            @if (form.get('email')?.hasError('required')) {
-              Email is required.
-            } @else if (form.get('email')?.hasError('email')) {
-              Please enter a valid email.
-            }
-          </div>
+        @if (isFieldInvalid('identifier')) {
+          <div class="error-msg">{{ cfg.label }} is required.</div>
         }
       </div>
 
+      <!-- Password Field -->
       <div class="form-group">
         <label for="password">Password</label>
         <div class="input-wrapper">
@@ -54,6 +71,7 @@
             placeholder="••••••••"
             class="form-control"
             [class.is-invalid]="isFieldInvalid('password')"
+            autocomplete="current-password"
           />
           <button
             type="button"
@@ -61,11 +79,7 @@
             (click)="toggleShowPassword()"
             aria-label="Toggle password visibility"
           >
-            @if (showPassword()) {
-              <lucide-icon name="eye-off" [size]="16"></lucide-icon>
-            } @else {
-              <lucide-icon name="eye" [size]="16"></lucide-icon>
-            }
+            <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
           </button>
         </div>
         @if (isFieldInvalid('password')) {
@@ -88,35 +102,6 @@
         </app-ui-button>
       </div>
     </form>
-
-    <!-- Quick Demo Switcher -->
-    <div class="demo-section">
-      <div class="demo-divider">
-        <span>Or test with demo accounts</span>
-      </div>
-      <div class="demo-buttons">
-        <button
-          type="button"
-          class="demo-btn admin"
-          (click)="fillDemo('admin@demo.com', 'Admin@123')"
-        >
-          <span class="demo-role">Admin</span>
-          <span class="demo-sub">admin&#64;demo.com</span>
-        </button>
-        <button
-          type="button"
-          class="demo-btn manager"
-          (click)="fillDemo('manager@demo.com', 'Manager@123')"
-        >
-          <span class="demo-role">Manager</span>
-          <span class="demo-sub">manager&#64;demo.com</span>
-        </button>
-        <button type="button" class="demo-btn user" (click)="fillDemo('user@demo.com', 'User@123')">
-          <span class="demo-role">User</span>
-          <span class="demo-sub">user&#64;demo.com</span>
-        </button>
-      </div>
-    </div>
 
     <div class="auth-footer">
       <p>Don't have an account? <a routerLink="/signup">Sign up</a></p>

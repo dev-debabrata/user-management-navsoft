@@ -76,7 +76,7 @@ export const routes: Routes = [
         data: { roles: ['manager', 'admin'] },
       },
 
-      // User Routes
+      // User / Employee Dashboard Routes
       {
         path: 'user/dashboard',
         loadComponent: () =>
@@ -84,7 +84,7 @@ export const routes: Routes = [
             (m) => m.UserDashboardComponent,
           ),
         canActivate: [roleGuard],
-        data: { roles: ['user', 'viewer', 'manager', 'admin'] },
+        data: { roles: ['employee', 'manager', 'admin'] },
       },
 
       // Shared Operational Features

@@ -64,7 +64,7 @@ export class UserListComponent implements OnInit {
     const all = this.allUsers();
 
     // Counts
-    const roleCounts: Record<string, number> = { admin: 0, manager: 0, user: 0 };
+    const roleCounts: Record<string, number> = { admin: 0, manager: 0, employee: 0 };
     const statusCounts: Record<string, number> = { active: 0, inactive: 0 };
     const deptCounts: Record<string, number> = {
       Engineering: 0,
@@ -78,9 +78,6 @@ export class UserListComponent implements OnInit {
       const role = (u.role || '').toLowerCase();
       if (roleCounts[role] !== undefined) {
         roleCounts[role]++;
-      } else if (role === 'viewer') {
-        // Gracefully count any legacy viewer record as user
-        roleCounts['user'] = (roleCounts['user'] || 0) + 1;
       }
 
       const status = (u.status || '').toLowerCase();
@@ -108,7 +105,7 @@ export class UserListComponent implements OnInit {
         options: [
           { label: 'Admin', value: 'admin', count: roleCounts['admin'] ?? 0 },
           { label: 'Manager', value: 'manager', count: roleCounts['manager'] ?? 0 },
-          { label: 'User', value: 'user', count: roleCounts['user'] ?? 0 },
+          { label: 'Employee', value: 'employee', count: roleCounts['employee'] ?? 0 },
         ],
       },
       {
@@ -142,12 +139,7 @@ export class UserListComponent implements OnInit {
 
     return all.filter((u) => {
       const uRole = (u.role || '').toLowerCase();
-      const roleMatch =
-        roles.length === 0 ||
-        roles.includes(uRole) ||
-        (roles.includes('user') && uRole === 'viewer');
-      if (!roleMatch) return false;
-
+      if (roles.length > 0 && !roles.includes(uRole)) return false;
       if (depts.length > 0 && (!u.department || !depts.includes(u.department))) return false;
       if (statuses.length > 0 && !statuses.includes((u.status || '').toLowerCase())) return false;
       return true;

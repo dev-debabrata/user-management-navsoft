@@ -210,15 +210,15 @@
             <div class="breakdown-item">
               <div class="breakdown-label">
                 <span class="dot-badge user"></span>
-                <span>General Users</span>
+                <span>Employees</span>
               </div>
               <div class="breakdown-bar-wrap">
                 <div
                   class="breakdown-bar user"
-                  [style.width.%]="(userCount() / (totalUsers() || 1)) * 100"
+                  [style.width.%]="(employeeCount() / (totalUsers() || 1)) * 100"
                 ></div>
               </div>
-              <span class="breakdown-val">{{ userCount() }}</span>
+              <span class="breakdown-val">{{ employeeCount() }}</span>
             </div>
           </div>
         </div>

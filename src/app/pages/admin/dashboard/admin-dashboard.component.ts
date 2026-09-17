@@ -50,9 +50,7 @@ export class AdminDashboardComponent implements OnInit {
 
   adminCount = computed(() => this.users().filter((u) => u.role === 'admin').length);
   managerCount = computed(() => this.users().filter((u) => u.role === 'manager').length);
-  userCount = computed(
-    () => this.users().filter((u) => u.role === 'user' || u.role === 'viewer').length,
-  );
+  employeeCount = computed(() => this.users().filter((u) => u.role === 'employee').length);
 
   recentUsers = computed(() => this.users().slice(0, 5));
 

@@ -68,9 +68,7 @@ describe('AuthService', () => {
       expect(service.currentRole()).toBe('admin');
     });
 
-    const req = httpMock.expectOne(
-      (r) => r.url === `${environment.apiUrl}/users` && r.params.get('email') === 'admin@demo.com',
-    );
+    const req = httpMock.expectOne(`${environment.apiUrl}/users`);
     expect(req.request.method).toBe('GET');
     req.flush(mockUsers);
   });

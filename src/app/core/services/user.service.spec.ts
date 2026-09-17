@@ -22,8 +22,8 @@ describe('UserService', () => {
 
   it('should fetch paginated users with X-Total-Count', () => {
     const mockUsers = [
-      { id: 1, name: 'User 1', email: 'u1@demo.com', role: 'user', status: 'active' },
-      { id: 2, name: 'User 2', email: 'u2@demo.com', role: 'user', status: 'active' },
+      { id: 1, name: 'User 1', email: 'u1@demo.com', role: 'employee', status: 'active' },
+      { id: 2, name: 'User 2', email: 'u2@demo.com', role: 'employee', status: 'active' },
     ];
 
     service.getUsers({ page: 1, limit: 10 }).subscribe((result) => {
@@ -43,7 +43,7 @@ describe('UserService', () => {
     const newUser = {
       name: 'Test User',
       email: 'test@example.com',
-      role: 'user' as const,
+      role: 'employee' as const,
       status: 'active' as const,
     };
 

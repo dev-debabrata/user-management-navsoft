@@ -1,10 +1,11 @@
-export type Role = 'admin' | 'manager' | 'viewer' | 'user';
+export type Role = 'admin' | 'manager' | 'employee';
 
 export type UserStatus = 'active' | 'inactive';
 
 export interface User {
   id: number | string;
   name: string;
+  username?: string;
   email: string;
   password?: string;
   role: Role;
@@ -22,7 +23,10 @@ export interface AuthSession {
 }
 
 export interface LoginCredentials {
-  email: string;
+  email?: string;
+  username?: string;
+  identifier?: string;
+  role?: string;
   password: string;
   rememberMe?: boolean;
 }
