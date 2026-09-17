@@ -63,7 +63,7 @@ export class GalleryComponent implements OnInit {
 
   maxVisibleThumbnails = 8;
 
-  magnifierZoom = 6;
+  magnifierZoom = 3;
 
   validPreviewsCount = computed(() => {
     return this.selectedPreviews().filter((p) => !p.error && p.dataUrl).length;
