@@ -200,7 +200,7 @@
      card. The parent has a definite height, so 100% resolves cleanly. */
   .user-management-page {
     height: 100% !important;
-    margin-bottom: 0 !important;
+    margin-bottom: -16px !important;
     gap: 8px !important;
   }
 
@@ -344,7 +344,7 @@
   /* ---- Drive ---- */
   .drive-page {
     height: 100% !important;
-    margin-bottom: 0 !important;
+    margin-bottom: -16px !important;
     gap: 8px !important;
   }
 
