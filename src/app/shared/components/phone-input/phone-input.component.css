@@ -38,8 +38,19 @@
   min-width: 0;
 }
 
-.trigger-flag {
+.trigger-flag,
+.trigger-flag-img {
   margin-right: 6px;
+  vertical-align: middle;
+}
+
+.trigger-flag-img {
+  display: inline-block;
+  width: 20px;
+  height: 15px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .trigger-dial {
@@ -102,8 +113,20 @@
   color: var(--text-muted);
 }
 
-.opt-flag {
+.opt-flag,
+.opt-flag-img {
   margin-right: 8px;
+  vertical-align: middle;
+}
+
+.opt-flag-img {
+  display: inline-block;
+  width: 20px;
+  height: 15px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
 }
 
 .opt-dial {
