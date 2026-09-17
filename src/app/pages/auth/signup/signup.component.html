@@ -42,11 +42,14 @@
           formControlName="email"
           placeholder="john.doe@example.com"
           class="form-control"
-          [class.is-invalid]="isFieldInvalid('email')"
+          [class.is-invalid]="isFieldInvalid('email') || form.get('email')?.hasError('emailExists')"
+          (blur)="onEmailBlur()"
         />
-        @if (isFieldInvalid('email')) {
+        @if (isFieldInvalid('email') || form.get('email')?.hasError('emailExists')) {
           <div class="error-msg">
-            @if (form.get('email')?.hasError('required')) {
+            @if (form.get('email')?.hasError('emailExists')) {
+              An account with this email already exists.
+            } @else if (form.get('email')?.hasError('required')) {
               Email is required.
             } @else if (form.get('email')?.hasError('email')) {
               Please enter a valid email address.

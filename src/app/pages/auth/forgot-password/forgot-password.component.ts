@@ -27,6 +27,17 @@ export class ForgotPasswordComponent {
   isLoading = signal<boolean>(false);
   errorMessage = signal<string>('');
 
+  constructor() {
+    this.form.get('email')?.valueChanges.subscribe(() => {
+      const emailControl = this.form.get('email');
+      if (emailControl?.hasError('notFound')) {
+        const errors = { ...emailControl.errors };
+        delete errors['notFound'];
+        emailControl.setErrors(Object.keys(errors).length ? errors : null);
+      }
+    });
+  }
+
   isFieldInvalid(name: string): boolean {
     const control = this.form.get(name);
     return !!(control && control.invalid && (control.dirty || control.touched));
@@ -56,7 +67,16 @@ export class ForgotPasswordComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.message || 'No account found with this email.');
+        const msg = err.message || 'No account found with this email.';
+        if (msg.toLowerCase().includes('no account') || msg.toLowerCase().includes('email')) {
+          const emailControl = this.form.get('email');
+          emailControl?.setErrors({ ...(emailControl.errors || {}), notFound: true });
+          emailControl?.markAsTouched();
+          emailControl?.markAsDirty();
+          this.errorMessage.set('');
+        } else {
+          this.errorMessage.set(msg);
+        }
       },
     });
   }

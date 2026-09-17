@@ -56,73 +56,46 @@ export class UserDashboardComponent implements OnInit {
   getRoleBadge = roleBadgeVariant;
 
   totalImages = computed(() => this.images().length);
-  myImages = computed(() => {
-    const current = this.currentUser();
-    if (!current) return [];
-    const emailLower = (current.email || '').trim().toLowerCase();
-    const nameLower = (current.name || '').trim().toLowerCase();
-    const usernameLower = (current.username || '').trim().toLowerCase();
-    const idStr = String(current.id ?? '')
-      .trim()
-      .toLowerCase();
-
-    return this.images().filter((img) => {
-      const uploader = (img.uploadedBy || '').trim().toLowerCase();
-      if (!uploader) return false;
-
-      // If uploader is an email address, strictly match against current user's email
-      if (uploader.includes('@')) {
-        return emailLower !== '' && uploader === emailLower;
-      }
-
-      // Legacy fallback for older test records created with name/username/id
-      return (
-        (nameLower !== '' && uploader === nameLower) ||
-        (usernameLower !== '' && uploader === usernameLower) ||
-        (idStr !== '' && uploader === idStr)
-      );
-    });
-  });
-
+  myImages = computed(() => this.images().filter((img) => this.isOwnedByUser(img.uploadedBy)));
   myImagesCount = computed(() => this.myImages().length);
   recentImages = computed(() => this.myImages().slice(0, 4));
 
-  myDriveNodes = computed(() => {
-    const current = this.currentUser();
-    if (!current) return [];
-    const emailLower = (current.email || '').trim().toLowerCase();
-    const nameLower = (current.name || '').trim().toLowerCase();
-    const usernameLower = (current.username || '').trim().toLowerCase();
-    const idStr = String(current.id ?? '')
-      .trim()
-      .toLowerCase();
-
-    return this.allDriveNodes().filter((node) => {
-      const uploader = (node.uploadedBy || '').trim().toLowerCase();
-      if (!uploader) return false;
-
-      if (uploader.includes('@')) {
-        return emailLower !== '' && uploader === emailLower;
-      }
-
-      return (
-        (nameLower !== '' && uploader === nameLower) ||
-        (usernameLower !== '' && uploader === usernameLower) ||
-        (idStr !== '' && uploader === idStr)
-      );
-    });
-  });
-
+  myDriveNodes = computed(() =>
+    this.allDriveNodes().filter((node) => this.isOwnedByUser(node.uploadedBy)),
+  );
   myDriveNodesCount = computed(() => this.myDriveNodes().length);
-  myDriveSizeBytes = computed(() => {
-    return this.myDriveNodes().reduce((acc, node) => acc + (node.size || 0), 0);
-  });
+  myDriveSizeBytes = computed(() =>
+    this.myDriveNodes().reduce((acc, node) => acc + (node.size || 0), 0),
+  );
   formattedMyDriveSize = computed(() => formatBytes(this.myDriveSizeBytes()));
 
   departmentPeers = computed(() => {
     const myDept = this.currentUser()?.department || 'General';
     return this.allUsers().filter((u) => (u.department || 'General') === myDept);
   });
+
+  private isOwnedByUser(uploaderRaw?: string): boolean {
+    const current = this.currentUser();
+    if (!current || !uploaderRaw) return false;
+    const uploader = uploaderRaw.trim().toLowerCase();
+    const email = (current.email || '').trim().toLowerCase();
+
+    if (uploader.includes('@')) {
+      return email !== '' && uploader === email;
+    }
+
+    const name = (current.name || '').trim().toLowerCase();
+    const username = (current.username || '').trim().toLowerCase();
+    const id = String(current.id ?? '')
+      .trim()
+      .toLowerCase();
+
+    return (
+      (name !== '' && uploader === name) ||
+      (username !== '' && uploader === username) ||
+      (id !== '' && uploader === id)
+    );
+  }
 
   ngOnInit(): void {
     this.loadData();

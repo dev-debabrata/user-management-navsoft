@@ -87,6 +87,21 @@ export class AuthService {
     );
   }
 
+  checkEmailExists(email: string): Observable<boolean> {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return of(false);
+    }
+    return this.http
+      .get<User[]>(`${environment.apiUrl}/users`, {
+        params: { email: cleanEmail },
+      })
+      .pipe(
+        map((users) => users && users.some((u) => u.email.toLowerCase() === cleanEmail)),
+        catchError(() => of(false)),
+      );
+  }
+
   signUp(payload: SignUpPayload): Observable<User> {
     const email = payload.email.trim().toLowerCase();
 
