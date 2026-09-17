@@ -62,7 +62,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/admin/users/user-list.component').then((m) => m.UserListComponent),
         canActivate: [roleGuard],
-        data: { roles: ['admin'] },
+        data: { roles: ['admin', 'manager'] },
       },
 
       // Manager Routes
@@ -74,6 +74,10 @@ export const routes: Routes = [
           ),
         canActivate: [roleGuard],
         data: { roles: ['manager', 'admin'] },
+      },
+      {
+        path: 'manager/users',
+        redirectTo: 'admin/users',
       },
 
       // User / Employee Dashboard Routes
