@@ -25,7 +25,7 @@
           id="name"
           type="text"
           formControlName="name"
-          placeholder="John Doe"
+          placeholder="Enter your full name"
           class="form-control"
           [class.is-invalid]="isFieldInvalid('name')"
         />
@@ -40,7 +40,7 @@
           id="email"
           type="email"
           formControlName="email"
-          placeholder="john.doe@example.com"
+          placeholder="Enter your email address"
           class="form-control"
           [class.is-invalid]="isFieldInvalid('email') || form.get('email')?.hasError('emailExists')"
           (blur)="onEmailBlur()"
@@ -78,13 +78,22 @@
 
       <div class="form-group">
         <label for="department">Department</label>
-        <select id="department" formControlName="department" class="form-control">
+        <select
+          id="department"
+          formControlName="department"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid('department')"
+        >
+          <option value="">Please Select</option>
           <option value="Engineering">Engineering</option>
           <option value="Sales">Sales</option>
           <option value="Design">Design</option>
           <option value="Support">Support</option>
           <option value="Finance">Finance</option>
         </select>
+        @if (isFieldInvalid('department')) {
+          <div class="error-msg">Please select a department to continue.</div>
+        }
       </div>
 
       <!-- Phone gets its own row: the code picker plus the number needs the width. -->

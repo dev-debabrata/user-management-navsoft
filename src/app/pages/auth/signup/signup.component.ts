@@ -37,7 +37,7 @@ export class SignupComponent {
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       role: ['', [Validators.required]],
-      department: ['Engineering'],
+      department: ['', [Validators.required]],
       phone: ['', [AppValidators.phoneNumber()]],
       password: ['', [Validators.required, AppValidators.passwordStrength()]],
       confirmPassword: ['', [Validators.required]],

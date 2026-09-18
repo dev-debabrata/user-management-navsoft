@@ -14,8 +14,8 @@ const BLANK_USER = {
   id: '',
   name: '',
   email: '',
-  role: 'employee',
-  department: 'Engineering',
+  role: '',
+  department: '',
   phone: '',
   status: 'active',
   password: '',
@@ -52,6 +52,7 @@ export class UserFormModalComponent {
   submitLabel = computed(() => (this.isEdit() ? 'Save Changes' : 'Create User'));
 
   readonly roleOptions = [
+    { value: '', label: 'Please Select' },
     { value: 'employee', label: 'Employee' },
     { value: 'manager', label: 'Manager' },
     { value: 'admin', label: 'Admin' },
@@ -63,8 +64,8 @@ export class UserFormModalComponent {
     id: [''],
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    role: ['employee', [Validators.required]],
-    department: ['Engineering'],
+    role: ['', [Validators.required]],
+    department: ['', [Validators.required]],
     phone: ['', [AppValidators.phoneNumber()]],
     status: ['active', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(6)]],

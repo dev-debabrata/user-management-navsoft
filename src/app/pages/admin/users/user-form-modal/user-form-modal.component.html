@@ -39,8 +39,9 @@
       </app-form-field>
     </div>
 
-    <app-form-field label="Department" [control]="form.controls['department']">
+    <app-form-field label="Department" [control]="form.controls['department']" [required]="true">
       <select id="userDept" formControlName="department" class="form-control">
+        <option value="">Please Select</option>
         <option value="Engineering">Engineering</option>
         <option value="Sales">Sales</option>
         <option value="Design">Design</option>
