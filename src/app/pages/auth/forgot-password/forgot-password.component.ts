@@ -5,12 +5,20 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { SnackbarService } from '../../../core/services/snackbar.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, UiButtonComponent, LucideAngularModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    UiButtonComponent,
+    FormFieldComponent,
+    LucideAngularModule,
+  ],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.css',
 })

@@ -19,71 +19,38 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
-      <div class="form-group">
-        <label for="name">Full Name</label>
+      <app-form-field label="Full Name" [control]="form.controls['name']" [required]="true">
         <input
           id="name"
           type="text"
           formControlName="name"
           placeholder="Enter your full name"
           class="form-control"
-          [class.is-invalid]="isFieldInvalid('name')"
         />
-        @if (isFieldInvalid('name')) {
-          <div class="error-msg">Full name is required (min 2 characters).</div>
-        }
-      </div>
+      </app-form-field>
 
-      <div class="form-group">
-        <label for="email">Email Address</label>
+      <app-form-field label="Email Address" [control]="form.controls['email']" [required]="true">
         <input
           id="email"
           type="email"
           formControlName="email"
           placeholder="Enter your email address"
           class="form-control"
-          [class.is-invalid]="isFieldInvalid('email') || form.get('email')?.hasError('emailExists')"
           (blur)="onEmailBlur()"
         />
-        @if (isFieldInvalid('email') || form.get('email')?.hasError('emailExists')) {
-          <div class="error-msg">
-            @if (form.get('email')?.hasError('emailExists')) {
-              An account with this email already exists.
-            } @else if (form.get('email')?.hasError('required')) {
-              Email is required.
-            } @else if (form.get('email')?.hasError('email')) {
-              Please enter a valid email address.
-            }
-          </div>
-        }
-      </div>
+      </app-form-field>
 
-      <div class="form-group">
-        <label for="role">Role</label>
-        <select
-          id="role"
-          formControlName="role"
-          class="form-control"
-          [class.is-invalid]="isFieldInvalid('role')"
-        >
+      <app-form-field label="Role" [control]="form.controls['role']" [required]="true">
+        <select id="role" formControlName="role" class="form-control">
           <option value="">Please Select</option>
           <option value="employee">Employee</option>
           <option value="manager">Manager</option>
           <option value="admin">Admin</option>
         </select>
-        @if (isFieldInvalid('role')) {
-          <div class="error-msg">Please select a role to continue.</div>
-        }
-      </div>
+      </app-form-field>
 
-      <div class="form-group">
-        <label for="department">Department</label>
-        <select
-          id="department"
-          formControlName="department"
-          class="form-control"
-          [class.is-invalid]="isFieldInvalid('department')"
-        >
+      <app-form-field label="Department" [control]="form.controls['department']" [required]="true">
+        <select id="department" formControlName="department" class="form-control">
           <option value="">Please Select</option>
           <option value="Engineering">Engineering</option>
           <option value="Sales">Sales</option>
@@ -91,18 +58,14 @@
           <option value="Support">Support</option>
           <option value="Finance">Finance</option>
         </select>
-        @if (isFieldInvalid('department')) {
-          <div class="error-msg">Please select a department to continue.</div>
-        }
-      </div>
+      </app-form-field>
 
       <!-- Phone gets its own row: the code picker plus the number needs the width. -->
       <app-form-field label="Phone Number (Optional)" [control]="form.controls['phone']">
         <app-phone-input inputId="phone" formControlName="phone"></app-phone-input>
       </app-form-field>
 
-      <div class="form-group">
-        <label for="password">Password</label>
+      <app-form-field label="Password" [control]="form.controls['password']" [required]="true">
         <div class="input-wrapper">
           <input
             id="password"
@@ -110,7 +73,6 @@
             formControlName="password"
             placeholder="••••••••"
             class="form-control"
-            [class.is-invalid]="isFieldInvalid('password')"
             autocomplete="new-password"
           />
           <button
@@ -122,15 +84,13 @@
             <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
           </button>
         </div>
-        @if (isFieldInvalid('password')) {
-          <div class="error-msg">
-            Password must be at least 6 characters with uppercase, lowercase, and numbers.
-          </div>
-        }
-      </div>
+      </app-form-field>
 
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
+      <app-form-field
+        label="Confirm Password"
+        [control]="form.controls['confirmPassword']"
+        [required]="true"
+      >
         <div class="input-wrapper">
           <input
             id="confirmPassword"
@@ -138,7 +98,6 @@
             formControlName="confirmPassword"
             placeholder="••••••••"
             class="form-control"
-            [class.is-invalid]="isFieldInvalid('confirmPassword') || form.hasError('mismatch')"
             autocomplete="new-password"
           />
           <button
@@ -153,13 +112,7 @@
             ></lucide-icon>
           </button>
         </div>
-        @if (
-          isFieldInvalid('confirmPassword') ||
-          (form.get('confirmPassword')?.touched && form.hasError('mismatch'))
-        ) {
-          <div class="error-msg">Passwords do not match.</div>
-        }
-      </div>
+      </app-form-field>
 
       <div class="form-action">
         <app-ui-button

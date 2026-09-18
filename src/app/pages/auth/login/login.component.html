@@ -20,8 +20,7 @@
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
       <!-- Username / Email Field -->
-      <div class="form-group">
-        <label for="identifier">Username / Email Address</label>
+      <app-form-field label="Username / Email Address" [control]="form.controls['identifier']">
         <div class="input-wrapper">
           <lucide-icon name="mail" [size]="16" class="input-icon"></lucide-icon>
           <input
@@ -30,18 +29,13 @@
             formControlName="identifier"
             placeholder="Enter username or email"
             class="form-control"
-            [class.is-invalid]="isFieldInvalid('identifier')"
             autocomplete="username"
           />
         </div>
-        @if (isFieldInvalid('identifier')) {
-          <div class="error-msg">Username or Email Address is required.</div>
-        }
-      </div>
+      </app-form-field>
 
       <!-- Password Field -->
-      <div class="form-group">
-        <label for="password">Password</label>
+      <app-form-field label="Password" [control]="form.controls['password']">
         <div class="input-wrapper">
           <lucide-icon name="lock" [size]="16" class="input-icon"></lucide-icon>
           <input
@@ -50,7 +44,6 @@
             formControlName="password"
             placeholder="••••••••"
             class="form-control"
-            [class.is-invalid]="isFieldInvalid('password')"
             autocomplete="current-password"
           />
           <button
@@ -62,13 +55,10 @@
             <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
           </button>
         </div>
-        @if (isFieldInvalid('password')) {
-          <div class="error-msg">Password is required.</div>
-        }
         <div class="forgot-password-row">
           <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
         </div>
-      </div>
+      </app-form-field>
 
       <div class="form-action">
         <app-ui-button
