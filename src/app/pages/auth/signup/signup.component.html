@@ -42,7 +42,7 @@
 
       <app-form-field label="Role" [control]="form.controls['role']" [required]="true">
         <select id="role" formControlName="role" class="form-control">
-          <option value="">Please Select</option>
+          <option value="" disabled hidden>Please Select</option>
           <option value="employee">Employee</option>
           <option value="manager">Manager</option>
           <option value="admin">Admin</option>
@@ -51,12 +51,12 @@
 
       <app-form-field label="Department" [control]="form.controls['department']" [required]="true">
         <select id="department" formControlName="department" class="form-control">
-          <option value="">Please Select</option>
-          <option value="Engineering">Engineering</option>
-          <option value="Sales">Sales</option>
-          <option value="Design">Design</option>
-          <option value="Support">Support</option>
-          <option value="Finance">Finance</option>
+          <option value="" disabled hidden>
+            {{ departmentOptions().length ? 'Please Select' : 'Select a role first' }}
+          </option>
+          @for (department of departmentOptions(); track department) {
+            <option [value]="department">{{ department }}</option>
+          }
         </select>
       </app-form-field>
 
@@ -71,6 +71,7 @@
             id="password"
             [type]="showPassword() ? 'text' : 'password'"
             formControlName="password"
+            [maxlength]="passwordMaxLength"
             placeholder="••••••••"
             class="form-control"
             autocomplete="new-password"
@@ -96,6 +97,7 @@
             id="confirmPassword"
             [type]="showConfirmPassword() ? 'text' : 'password'"
             formControlName="confirmPassword"
+            [maxlength]="passwordMaxLength"
             placeholder="••••••••"
             class="form-control"
             autocomplete="new-password"

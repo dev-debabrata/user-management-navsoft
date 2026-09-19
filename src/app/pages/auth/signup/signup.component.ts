@@ -5,7 +5,8 @@ import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { SnackbarService } from '../../../core/services/snackbar.service';
-import { AppValidators } from '../../../core/utils/validators';
+import { linkDepartmentToRole } from '../../../core/utils/departments';
+import { AppValidators, PASSWORD_MAX_LENGTH } from '../../../core/utils/validators';
 import { LucideAngularModule } from 'lucide-angular';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
@@ -32,15 +33,25 @@ export class SignupComponent {
   private snackbar = inject(SnackbarService);
   private router = inject(Router);
 
+  /** Caps typing in the password boxes at the same bound the validator enforces. */
+  passwordMaxLength = PASSWORD_MAX_LENGTH;
+
   form: FormGroup = this.fb.group(
     {
       name: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
+      email: [
+        '',
+        [
+          Validators.required,
+          Validators.email,
+          // Validators.pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/),
+        ],
+      ],
       role: ['', [Validators.required]],
       department: ['', [Validators.required]],
       phone: ['', [AppValidators.phoneNumber()]],
-      password: ['', [Validators.required, AppValidators.passwordStrength()]],
-      confirmPassword: ['', [Validators.required]],
+      password: ['', [AppValidators.required(), AppValidators.passwordStrength()]],
+      confirmPassword: ['', [AppValidators.required()]],
     },
     {
       validators: [AppValidators.match('password', 'confirmPassword')],
@@ -51,6 +62,8 @@ export class SignupComponent {
   errorMessage = signal<string>('');
   showPassword = signal<boolean>(false);
   showConfirmPassword = signal<boolean>(false);
+
+  departmentOptions = linkDepartmentToRole(this.form).options;
 
   constructor() {
     this.form

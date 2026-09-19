@@ -352,19 +352,146 @@
   }
 
   /* ---- Dashboards (admin, manager, employee) ---- */
-  .dashboard-page .metrics-grid,
+  /* Analytics panels and quick-card rows need their full width; the stat
+     tiles do not. Four full-width metric cards pushed the first real content
+     most of a screen down, so they go 2-up and shed the desktop sizing. */
   .dashboard-page .analytics-row,
   .dashboard-page .quick-cards-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
   }
 
+  .dashboard-page .metrics-grid,
+  .manager-dashboard-page .manager-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
   .dashboard-page .metric-card {
-    padding: 14px !important;
+    padding: 12px !important;
+    gap: 10px !important;
+  }
+
+  .dashboard-page .metric-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Without this the flex body refuses to shrink below its longest label and
+     the card overflows its track. */
+  .dashboard-page .metric-body {
+    min-width: 0 !important;
+  }
+
+  .dashboard-page .metric-label {
+    font-size: 11.5px !important;
   }
 
   .dashboard-page .metric-val {
-    font-size: 26px !important;
+    font-size: 20px !important;
+  }
+
+  .dashboard-page .metric-trend {
+    font-size: 10.5px !important;
+  }
+
+  /* ---- Manager dashboard ----
+     The hero KPI strip is 2-up on desktop, but the component's own 900px
+     query drops it to one per row — which makes the banner taller than the
+     viewport on a phone. Back to 2x2, with the pills scaled to fit. */
+  .manager-dashboard-page .manager-hero-card {
+    padding: 20px 18px !important;
+  }
+
+  /* The two hero CTAs wrap to a line each at this width. Pin them side by
+     side and let flex split the row evenly rather than sizing them off their
+     labels. The label truncates instead of wrapping, so a longer string can
+     never push the pair back onto two lines. */
+  .manager-dashboard-page .hero-cta-row {
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+
+  .manager-dashboard-page .hero-action-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 9px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .manager-dashboard-page .hero-action-btn svg {
+    flex-shrink: 0 !important;
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .manager-dashboard-page .hero-action-btn span {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .manager-dashboard-page .hero-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .manager-dashboard-page .hero-kpi-pill {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .manager-dashboard-page .kpi-icon-wrap {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+  }
+
+  .manager-dashboard-page .kpi-details {
+    min-width: 0 !important;
+  }
+
+  .manager-dashboard-page .kpi-num {
+    font-size: 15px !important;
+  }
+
+  .manager-dashboard-page .kpi-text {
+    font-size: 10.5px !important;
+  }
+
+  .manager-dashboard-page .m-metric-card {
+    padding: 12px !important;
+  }
+
+  .manager-dashboard-page .m-metric-header {
+    margin-bottom: 8px !important;
+  }
+
+  .manager-dashboard-page .m-metric-icon {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .manager-dashboard-page .m-metric-badge {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+  }
+
+  .manager-dashboard-page .m-metric-val {
+    font-size: 21px !important;
+  }
+
+  .manager-dashboard-page .m-metric-title {
+    font-size: 12px !important;
+  }
+
+  .manager-dashboard-page .m-metric-sub {
+    font-size: 10.5px !important;
   }
 
   /* Card header holds a title and a search box side by side; stack them so
@@ -534,6 +661,50 @@
     margin-left: auto !important;
     justify-content: flex-end !important;
   }
+
+  /* ---- User dashboard ---- */
+  /* The hero stacks at this width, so centre it deliberately rather than
+     leaving the alignment to however the flex children happen to wrap. */
+  .user-hero-card {
+    padding: 20px 18px !important;
+    text-align: center !important;
+  }
+
+  .user-hero-left {
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 12px !important;
+  }
+
+  .user-meta-chips {
+    justify-content: center !important;
+    gap: 10px !important;
+  }
+
+  /* Three KPIs on a wrapping flex row break 2-then-1 and leave the third
+     stranded under the gap. A fixed 3-up grid keeps the strip even. */
+  .user-hero-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .u-kpi-item {
+    min-width: 0 !important;
+    padding: 10px 6px !important;
+  }
+
+  .u-kpi-lbl {
+    font-size: 10.5px !important;
+  }
+
+  /* 190px thumbnails only fit one per row on a phone; halve them so the
+     four recent uploads read as a 2x2 block. */
+  .gallery-mini-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
 }
 
 /* ============================== TABLET ================================== */
@@ -649,6 +820,20 @@
     grid-template-columns: 1fr !important;
   }
 
+  /* ---- Manager dashboard ----
+     Two orphan problems at this width. The hero KPIs fall to one per row
+     (the component's own 900px query), and the four metric cards land on a
+     3-up track count that strands the fourth alone on its row. Both 2x2. */
+  .manager-dashboard-page .hero-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .manager-dashboard-page .manager-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
   .dashboard-page .search-wrap {
     width: 240px !important;
   }
@@ -697,6 +882,18 @@
 
   .gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+  }
+
+  /* ---- User dashboard ----
+     Four metric cards and three shortcuts both land on a 3-up track count here,
+     which strands a single card alone on the last row. Pin the counts so each
+     section fills its rows: metrics 2x2, shortcuts one per row. */
+  .emp-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .emp-shortcuts-list {
+    grid-template-columns: 1fr !important;
   }
 }
 

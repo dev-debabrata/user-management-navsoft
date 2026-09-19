@@ -3,8 +3,10 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ActiveFilterState, FilterGroup } from '../../../core/models/filter.model';
 import { TableColumn } from '../../../core/models/table.model';
 import { User } from '../../../core/models/user.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { SnackbarService } from '../../../core/services/snackbar.service';
 import { UserService } from '../../../core/services/user.service';
+import { ALL_DEPARTMENTS } from '../../../core/utils/departments';
 import { formatDate, getInitials, roleBadgeVariant } from '../../../core/utils/formatters';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -28,7 +30,7 @@ const FILTER_DEFS: FilterDef[] = [
     id: 'department',
     title: 'Department',
     searchable: true,
-    values: ['Engineering', 'Sales', 'Design', 'Support', 'Finance'],
+    values: [...ALL_DEPARTMENTS],
   },
   {
     id: 'status',
@@ -62,6 +64,9 @@ const titleCase = (value: string): string => value.charAt(0).toUpperCase() + val
 export class UserListComponent implements OnInit {
   private userService = inject(UserService);
   private snackbar = inject(SnackbarService);
+  private auth = inject(AuthService);
+
+  isSelf = (user: User): boolean => this.auth.isCurrentUser(user.id);
 
   isLoading = signal<boolean>(true);
   isSubmitting = signal<boolean>(false);

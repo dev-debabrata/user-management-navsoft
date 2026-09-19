@@ -20,45 +20,46 @@
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
       <!-- Username / Email Field -->
-      <app-form-field label="Username / Email Address" [control]="form.controls['identifier']">
+      <app-form-field label="Email Address" [control]="form.controls['identifier']">
         <div class="input-wrapper">
           <lucide-icon name="mail" [size]="16" class="input-icon"></lucide-icon>
           <input
             id="identifier"
             type="text"
             formControlName="identifier"
-            placeholder="Enter username or email"
+            placeholder="Enter your email"
             class="form-control"
             autocomplete="username"
           />
         </div>
       </app-form-field>
 
-      <!-- Password Field -->
-      <app-form-field label="Password" [control]="form.controls['password']">
-        <div class="input-wrapper">
-          <lucide-icon name="lock" [size]="16" class="input-icon"></lucide-icon>
-          <input
-            id="password"
-            [type]="showPassword() ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="••••••••"
-            class="form-control"
-            autocomplete="current-password"
-          />
-          <button
-            type="button"
-            class="toggle-pwd-btn"
-            (click)="toggleShowPassword()"
-            aria-label="Toggle password visibility"
-          >
-            <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
-          </button>
-        </div>
+      <div class="password-field">
+        <app-form-field label="Password" [control]="form.controls['password']">
+          <div class="input-wrapper">
+            <lucide-icon name="lock" [size]="16" class="input-icon"></lucide-icon>
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="••••••••"
+              class="form-control"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="toggle-pwd-btn"
+              (click)="toggleShowPassword()"
+              aria-label="Toggle password visibility"
+            >
+              <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
+            </button>
+          </div>
+        </app-form-field>
         <div class="forgot-password-row">
           <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
         </div>
-      </app-form-field>
+      </div>
 
       <div class="form-action">
         <app-ui-button

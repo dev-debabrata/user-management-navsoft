@@ -2,6 +2,10 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { isValidPhoneNumber, validatePhoneNumberLength } from 'libphonenumber-js';
 import { phoneRulesForDial, splitPhone } from './countries';
 
+/** Exported so the rule and the message it produces cannot drift apart. */
+export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MAX_LENGTH = 15;
+
 export class AppValidators {
   static phoneNumber(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
@@ -18,22 +22,38 @@ export class AppValidators {
     };
   }
 
+  /**
+   * `Validators.required` accepts a value of only spaces, so a password of blanks reads as
+   * present and fails the strength rule instead — the field looks empty while the message
+   * talks about characters the user cannot see. Blank counts as missing here, and the error
+   * key stays `required` so every message stays as it was.
+   */
+  static required(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      const blank = value === null || value === undefined || String(value).trim() === '';
+      return blank ? { required: true } : null;
+    };
+  }
+
   static passwordStrength(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const val = control.value;
       if (!val) return null;
 
-      const hasMinLength = val.length >= 6;
+      const hasMinLength = val.length >= PASSWORD_MIN_LENGTH;
+      const hasMaxLength = val.length <= PASSWORD_MAX_LENGTH;
       const hasUpper = /[A-Z]/.test(val);
       const hasLower = /[a-z]/.test(val);
       const hasNumber = /[0-9]/.test(val);
 
-      const isValid = hasMinLength && hasUpper && hasLower && hasNumber;
+      const isValid = hasMinLength && hasMaxLength && hasUpper && hasLower && hasNumber;
       return isValid
         ? null
         : {
             passwordStrength: {
               hasMinLength,
+              hasMaxLength,
               hasUpper,
               hasLower,
               hasNumber,

@@ -9,6 +9,7 @@ import { DRIVE_ROOT, DriveService } from '../../core/services/drive.service';
 import { ImageModalService } from '../../core/services/image-modal.service';
 import { MediaUploadService } from '../../core/services/media-upload.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
+import { UploaderService } from '../../core/services/uploader.service';
 import { openDataUrlInNewTab } from '../../core/utils/data-url';
 import { isImageType, isVideoType } from '../../core/utils/file-types';
 import { isValidFolderName } from '../../core/utils/folder-validator';
@@ -50,6 +51,7 @@ export class DriveComponent implements OnInit {
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
   private imageModalService = inject(ImageModalService);
+  private uploaders = inject(UploaderService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -85,7 +87,15 @@ export class DriveComponent implements OnInit {
   filteredNodes = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.nodes();
-    return this.nodes().filter((n) => n.name.toLowerCase().includes(q));
+
+    // Matches the Owner column: `uploadedBy` holds an email on newer rows, so search the
+    // display name the column actually shows as well as the raw stored value.
+    return this.nodes().filter(
+      (n) =>
+        n.name.toLowerCase().includes(q) ||
+        this.uploaders.nameFor(n.uploadedBy).toLowerCase().includes(q) ||
+        (n.uploadedBy || '').toLowerCase().includes(q),
+    );
   });
 
   currentFolders = computed(() => {
@@ -96,18 +106,19 @@ export class DriveComponent implements OnInit {
     return this.filteredNodes().filter((n) => n.type === 'file');
   });
 
-  existingFolderNames = computed(() => {
-    return this.currentFolders().map((f) => f.name);
-  });
+  private siblingsOfType(type: DriveNode['type']): DriveNode[] {
+    return this.nodes().filter((n) => n.type === type);
+  }
 
-  existingFileNames = computed(() => {
-    return this.currentFiles().map((f) => f.name);
-  });
+  // Duplicate checks run against every sibling, never `filteredNodes()` — a name hidden
+  // by the search box is still taken, and matching on the visible list let it through.
+  existingFolderNames = computed(() => this.siblingsOfType('folder').map((f) => f.name));
+
+  existingFileNames = computed(() => this.siblingsOfType('file').map((f) => f.name));
 
   siblingNodesForRename = computed(() => {
     const node = this.nodeToRename();
-    if (!node) return [];
-    return node.type === 'folder' ? this.currentFolders() : this.currentFiles();
+    return node ? this.siblingsOfType(node.type) : [];
   });
 
   ngOnInit(): void {
@@ -154,7 +165,8 @@ export class DriveComponent implements OnInit {
   }
 
   navigateToFolder(folderId: string): void {
-    this.searchQuery.set('');
+    // The query survives the move and filters the folder you land in — the search box
+    // shows it, so clearing it here would leave the text on screen filtering nothing.
     const queryParams: Record<string, string> = {};
     if (folderId && folderId !== DRIVE_ROOT) {
       queryParams['folderId'] = folderId;

@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { EMPTY, switchMap } from 'rxjs';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../../core/utils/validators';
 
 @Component({
   selector: 'app-form-field',
@@ -28,6 +29,12 @@ export class FormFieldComponent {
   });
 
   message = computed(() => {
+    // Track the control's events here too, not just through `invalid()`. Swapping one
+    // error for another — `required` for `passwordStrength` as the user starts typing —
+    // leaves `invalid()` reading `true` throughout, so without this the memoised message
+    // never recomputes and the field keeps showing the error it first failed with.
+    this.controlEvent();
+
     if (!this.invalid()) return '';
     if (this.errorText()) return this.errorText();
 
@@ -40,7 +47,10 @@ export class FormFieldComponent {
     if (errors['required']) return `${label} is required.`;
     if (errors['email']) return 'Please enter a valid email address.';
     if (errors['passwordStrength']) {
-      return 'Password must be at least 6 characters with uppercase, lowercase, and numbers.';
+      return (
+        `Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters ` +
+        'with uppercase, lowercase, and numbers.'
+      );
     }
     if (errors['mismatch']) return 'Passwords do not match.';
     if (errors['minlength']) {

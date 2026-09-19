@@ -2,7 +2,13 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { User } from '../../../../core/models/user.model';
-import { AppValidators } from '../../../../core/utils/validators';
+import { AuthService } from '../../../../core/services/auth.service';
+import { linkDepartmentToRole } from '../../../../core/utils/departments';
+import {
+  AppValidators,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../../../core/utils/validators';
 import { FormFieldComponent } from '../../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { PhoneInputComponent } from '../../../../shared/components/phone-input/phone-input.component';
@@ -37,6 +43,7 @@ const BLANK_USER = {
 })
 export class UserFormModalComponent {
   private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
 
   mode = input<UserFormMode>('add');
   isOpen = input<boolean>(false);
@@ -51,6 +58,8 @@ export class UserFormModalComponent {
   title = computed(() => (this.isEdit() ? 'Edit User Profile' : 'Create New User'));
   submitLabel = computed(() => (this.isEdit() ? 'Save Changes' : 'Create User'));
 
+  isEditingSelf = computed(() => this.isEdit() && this.auth.isCurrentUser(this.user()?.id));
+
   readonly roleOptions = [
     { value: '', label: 'Please Select' },
     { value: 'employee', label: 'Employee' },
@@ -60,6 +69,9 @@ export class UserFormModalComponent {
 
   showPassword = signal<boolean>(false);
 
+  /** Caps typing in the password boxes at the same bound the validator enforces. */
+  passwordMaxLength = PASSWORD_MAX_LENGTH;
+
   form: FormGroup = this.fb.group({
     id: [''],
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -68,8 +80,18 @@ export class UserFormModalComponent {
     department: ['', [Validators.required]],
     phone: ['', [AppValidators.phoneNumber()]],
     status: ['active', [Validators.required]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(PASSWORD_MIN_LENGTH),
+        Validators.maxLength(PASSWORD_MAX_LENGTH),
+      ],
+    ],
   });
+
+  private department = linkDepartmentToRole(this.form);
+  departmentOptions = this.department.options;
 
   constructor() {
     effect(() => {
@@ -77,24 +99,32 @@ export class UserFormModalComponent {
 
       const editing = this.isEdit();
       const u = this.user();
+      const record = editing && u ? u : null;
 
       this.form.reset(
-        editing && u
+        record
           ? {
-              id: u.id,
-              name: u.name,
-              email: u.email,
-              role: u.role,
-              department: u.department || 'Engineering',
-              phone: u.phone || '',
-              status: u.status,
+              id: record.id,
+              name: record.name,
+              email: record.email,
+              role: record.role,
+              department: record.department || '',
+              phone: record.phone || '',
+              status: record.status,
               password: '',
             }
           : BLANK_USER,
+        { emitEvent: false },
       );
+      this.department.seed(record?.role ?? '', record?.department ?? '');
       this.showPassword.set(false);
       this.setEnabled('password', !editing);
       this.setEnabled('id', editing);
+
+      // Disabled controls are dropped from form.value, and updateUser PATCHes,
+      // so leaving them out means the server keeps the existing role/status.
+      this.setEnabled('role', !this.isEditingSelf());
+      this.setEnabled('status', !this.isEditingSelf());
     });
   }
 

@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { DriveNode } from '../models/drive.model';
 import { ImageItem } from '../models/image.model';
-import { isConnectionLost, pause } from '../utils/write-pacing';
+import { batchedWrite, runPacedWrites } from '../utils/write-pacing';
 import { DRIVE_ROOT } from './drive.service';
 import { LoadingService } from './loading.service';
 import { SnackbarService } from './snackbar.service';
@@ -14,6 +14,8 @@ export interface MediaUploadOutcome {
   tooLarge: string[];
   duplicates: string[];
   failed: string[];
+  /** The API stopped responding mid-batch, so the remaining files were never attempted. */
+  connectionLost?: boolean;
 }
 
 export interface MediaUploadOptions {
@@ -73,25 +75,25 @@ export class MediaUploadService {
     return result;
   }
 
-  /** Drive and Gallery are separate stores: this writes `nodes` only. */
   uploadToDrive(items: MediaUploadItem[], opts: MediaUploadOptions): Promise<MediaUploadOutcome> {
     const parentId = opts.driveParentId || DRIVE_ROOT;
     return this.runUploads(items, (item) =>
-      this.http.post<DriveNode>(this.nodesUrl, this.nodeFor(item, parentId, opts.uploadedBy)),
+      this.http.post<DriveNode>(this.nodesUrl, this.nodeFor(item, parentId, opts.uploadedBy), {
+        context: batchedWrite(),
+      }),
     );
   }
 
   /** Counterpart of {@link uploadToDrive}: this writes `images` only. */
   uploadToGallery(items: MediaUploadItem[], opts: MediaUploadOptions): Promise<MediaUploadOutcome> {
     return this.runUploads(items, (item) =>
-      this.http.post<ImageItem>(this.imagesUrl, this.imageFor(item, opts.uploadedBy)),
+      this.http.post<ImageItem>(this.imagesUrl, this.imageFor(item, opts.uploadedBy), {
+        context: batchedWrite(),
+      }),
     );
   }
 
   async readAndUploadToDrive(files: File[], opts: MediaUploadOptions): Promise<MediaUploadOutcome> {
-    // Reading a batch of base64 blobs is slow but issues no request, so without
-    // this the overlay only appears once the first POST goes out. Nesting is
-    // safe: LoadingService counts holds.
     this.loading.show();
     try {
       const read = await this.readFiles(files, opts.maxMb ?? this.maxUploadMb);
@@ -128,7 +130,13 @@ export class MediaUploadService {
         'File Too Large',
       );
     }
-    if (failed.length > 0) {
+    if (outcome.connectionLost) {
+      this.snackbar.error(
+        `${failed.length} file(s) were not uploaded because the API stopped responding. ` +
+          'Check that `npm run api` is still running, then retry them.',
+        'Upload Interrupted',
+      );
+    } else if (failed.length > 0) {
       this.snackbar.error(`Failed to upload: ${failed.join(', ')}`);
     }
   }
@@ -137,37 +145,20 @@ export class MediaUploadService {
     items: MediaUploadItem[],
     post: (item: MediaUploadItem) => Observable<unknown>,
   ): Promise<MediaUploadOutcome> {
-    const outcome: MediaUploadOutcome = { uploaded: [], tooLarge: [], duplicates: [], failed: [] };
-
-    // One loader for the whole batch. The interceptor raises and drops the
-    // global loader per request, so across a paced batch the request count hits
-    // zero in every gap: the overlay unmounts, the page's own inline loader
-    // (which only hides while the overlay is up) takes its place, and the next
-    // file swaps them back — two loaders flickering, once per file. Holding the
-    // count above zero for the batch keeps it to a single, steady overlay.
     this.loading.show();
     try {
-      for (const [index, item] of items.entries()) {
-        try {
-          if (index) await pause();
-          await firstValueFrom(post(item));
-          outcome.uploaded.push(item.name);
-        } catch (error) {
-          outcome.failed.push(item.name);
-
-          // Once the connection is gone the rest cannot land either, and each
-          // attempt would raise its own error toast. Record them and stop.
-          if (isConnectionLost(error)) {
-            outcome.failed.push(...items.slice(index + 1).map((rest) => rest.name));
-            break;
-          }
-        }
-      }
+      const { done, failed, pending, aborted } = await runPacedWrites(items, post);
+      return {
+        uploaded: done.map((item) => item.name),
+        // `pending` never got attempted, but from the caller's side it is the same miss.
+        failed: [...failed, ...pending].map((item) => item.name),
+        tooLarge: [],
+        duplicates: [],
+        connectionLost: aborted,
+      };
     } finally {
       this.loading.hide();
     }
-
-    return outcome;
   }
 
   private nodeFor(item: MediaUploadItem, parentId: string, uploadedBy: string): DriveNode {

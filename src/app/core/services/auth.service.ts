@@ -1,7 +1,7 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AuthSession,
@@ -29,6 +29,11 @@ export class AuthService {
   isAuthenticated = computed(() => !!this.sessionSignal() && !this.isSessionExpired());
   currentRole = computed<Role | null>(() => this.sessionSignal()?.user?.role ?? null);
 
+  isCurrentUser(id: string | number | undefined): boolean {
+    const me = this.currentUser();
+    return !!me && id !== undefined && String(id) === String(me.id);
+  }
+
   constructor() {
     if (this.sessionSignal() && this.isSessionExpired()) {
       this.clearSession();
@@ -42,11 +47,15 @@ export class AuthService {
     if (!currentId) return;
     this.http
       .get<User>(`${environment.apiUrl}/users/${currentId}`)
-      .pipe(catchError(() => of(null)))
+      .pipe(catchError((err: HttpErrorResponse) => (err.status === 404 ? of(null) : EMPTY)))
       .subscribe((latestUser) => {
-        if (latestUser) {
-          this.setSession(latestUser);
+        if (!latestUser || latestUser.status === 'inactive') {
+          this.clearSession();
+          this.snackbar.warning('Your account is no longer active. Please sign in again.');
+          this.router.navigate(['/login']);
+          return;
         }
+        this.setSession(latestUser);
       });
   }
 
@@ -72,10 +81,12 @@ export class AuthService {
         });
 
         if (!user) {
-          throw new Error('No account found matching the provided credentials.');
+          throw new Error(
+            'No account found for that username or email. Please check it, or create a new account.',
+          );
         }
         if (user.password !== credentials.password) {
-          throw new Error('Invalid username/email or password.');
+          throw new Error('Incorrect password. Please try again.');
         }
         if (user.status === 'inactive') {
           throw new Error('Your account has been deactivated. Please contact an administrator.');
@@ -141,7 +152,7 @@ export class AuthService {
         map((users) => {
           const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
           if (!user) {
-            throw new Error('No account found associated with this email address.');
+            throw new Error('No account found for that email address.');
           }
           return user;
         }),
@@ -172,7 +183,7 @@ export class AuthService {
 
   logout(redirect: boolean = true): void {
     this.clearSession();
-    this.snackbar.info('You have been logged out.');
+    this.snackbar.info('You have been logged out.', 'Logout');
     if (redirect) {
       this.router.navigate(['/login']);
     }
@@ -183,15 +194,41 @@ export class AuthService {
     return !!current && roles.includes(current);
   }
 
+  /** Admins and managers review every user's uploads; anyone else sees only their own. */
+  seesAllUploads(): boolean {
+    return this.hasRole('admin', 'manager');
+  }
+
+  /**
+   * Narrows a Gallery/Drive query to the signed in user's own rows, and leaves it untouched
+   * for admins and managers. `uploadedBy` holds the email on newer rows and the display name
+   * on older ones, so both are sent — json-server reads a repeated param as OR.
+   */
+  ownedScope(base: Record<string, string | number> = {}): HttpParams {
+    let params = new HttpParams({ fromObject: base });
+    if (this.seesAllUploads()) return params;
+
+    const me = this.currentUser();
+    for (const identity of [me?.email, me?.name]) {
+      if (identity) params = params.append('uploadedBy', identity);
+    }
+    return params;
+  }
+
+  /**
+   * Where a role belongs when no specific page was asked for. Without a role there is no
+   * dashboard to pick, so the answer is the login page — guessing one would hand a signed
+   * out visitor another role's URL, which `roleGuard` then has to bounce.
+   */
+  homeUrl(role: Role | null = this.currentRole()): string {
+    if (role === 'admin') return '/admin/dashboard';
+    if (role === 'manager') return '/manager/dashboard';
+    if (role === 'employee') return '/user/dashboard';
+    return '/login';
+  }
+
   redirectAfterLogin(role?: Role): void {
-    const target = role || this.currentRole();
-    const dest =
-      target === 'admin'
-        ? '/admin/dashboard'
-        : target === 'manager'
-          ? '/manager/dashboard'
-          : '/user/dashboard';
-    this.router.navigate([dest], { replaceUrl: true });
+    this.router.navigate([this.homeUrl(role ?? this.currentRole())], { replaceUrl: true });
   }
 
   getToken(): string | null {

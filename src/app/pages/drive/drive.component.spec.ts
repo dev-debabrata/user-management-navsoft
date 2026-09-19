@@ -230,6 +230,56 @@ describe('DriveComponent multi-file upload', () => {
     fixture.componentInstance.closeCreateFolderModal();
     expect(fixture.componentInstance.isCreateFolderOpen()).toBe(false);
   });
+
+  it('searches the owner column as well as the file name', () => {
+    const component = fixture.componentInstance;
+    const createdAt = new Date().toISOString();
+    component.nodes.set([
+      {
+        id: 'file-1',
+        name: 'notes.pdf',
+        type: 'file',
+        parentId: 'root',
+        createdAt,
+        uploadedBy: 'Smith Josh',
+      },
+      {
+        id: 'file-2',
+        name: 'budget.xlsx',
+        type: 'file',
+        parentId: 'root',
+        createdAt,
+        uploadedBy: 'debabrata@demo.com',
+      },
+    ]);
+
+    component.searchQuery.set('smith');
+    expect(component.currentFiles().map((f) => f.name)).toEqual(['notes.pdf']);
+
+    // An owner stored as an email is searchable by that email too.
+    component.searchQuery.set('debabrata');
+    expect(component.currentFiles().map((f) => f.name)).toEqual(['budget.xlsx']);
+
+    component.searchQuery.set('notes');
+    expect(component.currentFiles().map((f) => f.name)).toEqual(['notes.pdf']);
+  });
+
+  it('still reports a sibling name the search box is hiding, so duplicates stay blocked', () => {
+    const component = fixture.componentInstance;
+    const createdAt = new Date().toISOString();
+    component.nodes.set([
+      { id: 'folder-1', name: 'Reports', type: 'folder', parentId: 'root', createdAt },
+      { id: 'file-1', name: 'notes.pdf', type: 'file', parentId: 'root', createdAt },
+    ]);
+
+    component.searchQuery.set('notes');
+
+    // The grid only shows the match...
+    expect(component.currentFolders()).toEqual([]);
+    // ...but "Reports" is still taken, and the duplicate check has to know that.
+    expect(component.existingFolderNames()).toEqual(['Reports']);
+    expect(component.existingFileNames()).toEqual(['notes.pdf']);
+  });
 });
 
 async function waitForPost(httpMock: HttpTestingController, url: string) {

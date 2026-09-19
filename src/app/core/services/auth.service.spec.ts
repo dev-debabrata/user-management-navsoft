@@ -50,6 +50,17 @@ describe('AuthService', () => {
     expect(service.currentUser()).toBeNull();
   });
 
+  it('sends each role to its own dashboard, and a session-less visitor to login', () => {
+    expect(service.homeUrl('admin')).toBe('/admin/dashboard');
+    expect(service.homeUrl('manager')).toBe('/manager/dashboard');
+    expect(service.homeUrl('employee')).toBe('/user/dashboard');
+
+    // Guessing a dashboard here is what used to leak `/user/dashboard` into the
+    // login returnUrl for signed out visitors, whatever role they then signed in as.
+    expect(service.homeUrl(null)).toBe('/login');
+    expect(service.homeUrl()).toBe('/login');
+  });
+
   it('should authenticate user and store session on valid login without requiring role input', () => {
     const mockUsers = [
       {
@@ -73,6 +84,33 @@ describe('AuthService', () => {
     req.flush(mockUsers);
   });
 
+  describe('ownedScope', () => {
+    /** Signs a role in through the normal login path, so the session is the real thing. */
+    const signIn = (role: string, name: string, email: string) => {
+      service.login({ identifier: email, password: 'Password123' }).subscribe();
+      httpMock
+        .expectOne(`${environment.apiUrl}/users`)
+        .flush([{ id: 9, name, email, password: 'Password123', role, status: 'active' }]);
+    };
+
+    it('limits an employee to their own rows, by email or display name', () => {
+      signIn('employee', 'Emma Employee', 'emma@demo.com');
+
+      const params = service.ownedScope({ _sort: 'createdAt', _order: 'desc' });
+      // Older rows stored the display name, newer ones the email — json-server ORs them.
+      expect(params.getAll('uploadedBy')).toEqual(['emma@demo.com', 'Emma Employee']);
+      expect(params.get('_sort')).toBe('createdAt');
+      expect(service.seesAllUploads()).toBe(false);
+    });
+
+    it('leaves the query untouched for admin and manager', () => {
+      signIn('admin', 'System Admin', 'admin@demo.com');
+
+      expect(service.seesAllUploads()).toBe(true);
+      expect(service.ownedScope({ parentId: 'root' }).has('uploadedBy')).toBe(false);
+    });
+  });
+
   it('should reject login when user is not found or password is wrong', () => {
     const mockUsers = [
       {
@@ -93,7 +131,7 @@ describe('AuthService', () => {
 
     httpMock.expectOne(`${environment.apiUrl}/users`).flush(mockUsers);
 
-    expect(error?.message).toBe('Invalid username/email or password.');
+    expect(error?.message).toBe('Incorrect password. Please try again.');
     expect(service.isAuthenticated()).toBe(false);
   });
 

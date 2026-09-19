@@ -7,16 +7,15 @@ import { ImageModalService } from '../../core/services/image-modal.service';
 import { ImageService } from '../../core/services/image.service';
 import { MediaUploadOutcome } from '../../core/services/media-upload.service';
 import { SnackbarService } from '../../core/services/snackbar.service';
+import { UploaderService } from '../../core/services/uploader.service';
 import { formatBytes, formatDate } from '../../core/utils/formatters';
 import { PacedWriteOutcome, runPacedWrites } from '../../core/utils/write-pacing';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ImageMagnifierComponent } from '../../shared/components/image-magnifier/image-magnifier.component';
-import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.component';
 import { UploadModalComponent } from '../../shared/components/upload-modal/upload-modal.component';
+import { GalleryCollectionComponent } from './gallery-collection/gallery-collection.component';
 
 @Component({
   selector: 'app-gallery',
@@ -27,10 +26,8 @@ import { UploadModalComponent } from '../../shared/components/upload-modal/uploa
     UiButtonComponent,
     UploadModalComponent,
     ImageMagnifierComponent,
-    SearchInputComponent,
     ConfirmDialogComponent,
-    EmptyStateComponent,
-    LoaderComponent,
+    GalleryCollectionComponent,
     LucideAngularModule,
   ],
   templateUrl: './gallery.component.html',
@@ -40,6 +37,7 @@ export class GalleryComponent implements OnInit {
   private imageService = inject(ImageService);
   private authService = inject(AuthService);
   private snackbar = inject(SnackbarService);
+  uploaders = inject(UploaderService);
   modalService = inject(ImageModalService);
 
   isLoading = signal<boolean>(true);
@@ -66,11 +64,17 @@ export class GalleryComponent implements OnInit {
   filteredImages = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.images();
-    return this.images().filter((img) => img.name.toLowerCase().includes(q));
+
+    return this.images().filter(
+      (img) =>
+        img.name.toLowerCase().includes(q) ||
+        this.uploaders.nameFor(img.uploadedBy).toLowerCase().includes(q) ||
+        (img.uploadedBy || '').toLowerCase().includes(q),
+    );
   });
 
   galleryModalItems = computed(() => {
-    return this.images().map((img) => ({
+    return this.filteredImages().map((img) => ({
       url: img.url,
       title: img.name,
     }));
@@ -79,16 +83,16 @@ export class GalleryComponent implements OnInit {
   activeImageIndex = computed(() => {
     const active = this.activeImage();
     if (!active) return 0;
-    const idx = this.images().findIndex((img) => img.id === active.id);
+    const idx = this.filteredImages().findIndex((img) => img.id === active.id);
     return idx >= 0 ? idx : 0;
   });
 
   visibleThumbnails = computed(() => {
-    return this.images().slice(0, this.maxVisibleThumbnails);
+    return this.filteredImages().slice(0, this.maxVisibleThumbnails);
   });
 
   overflowThumbnailsCount = computed(() => {
-    return Math.max(0, this.images().length - this.maxVisibleThumbnails);
+    return Math.max(0, this.filteredImages().length - this.maxVisibleThumbnails);
   });
 
   selectedImages = computed(() => {
@@ -125,8 +129,10 @@ export class GalleryComponent implements OnInit {
     this.imageService.getImages().subscribe({
       next: (data) => {
         this.images.set(data);
-        if (data.length > 0 && !this.activeImage()) {
-          this.activeImage.set(data[0]);
+
+        const active = this.activeImage();
+        if (active) {
+          this.activeImage.set(data.find((img) => img.id === active.id) ?? null);
         }
         this.isLoading.set(false);
       },
@@ -153,6 +159,10 @@ export class GalleryComponent implements OnInit {
 
   setActiveImage(image: ImageItem): void {
     this.activeImage.set(image);
+  }
+
+  showAllImages(): void {
+    this.activeImage.set(null);
   }
 
   openLightbox(index?: number): void {

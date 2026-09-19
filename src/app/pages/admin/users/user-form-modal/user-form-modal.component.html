@@ -5,7 +5,7 @@
         id="userName"
         type="text"
         formControlName="name"
-        placeholder="Jane Doe"
+        placeholder="Enter full name"
         class="form-control"
         autocomplete="off"
       />
@@ -16,22 +16,35 @@
         id="userEmail"
         type="email"
         formControlName="email"
-        placeholder="jane.doe@example.com"
+        placeholder="Enter email address"
         class="form-control"
         autocomplete="off"
       />
     </app-form-field>
 
     <div class="form-row">
-      <app-form-field label="Role" [control]="form.controls['role']" [required]="true">
+      <app-form-field
+        label="Role"
+        [control]="form.controls['role']"
+        [required]="true"
+        [hint]="isEditingSelf() ? 'You cannot change your own role.' : ''"
+      >
         <select id="userRole" formControlName="role" class="form-control">
           @for (option of roleOptions; track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
+            <!-- The empty prompt stays as the closed-state label, but out of the open list. -->
+            <option [value]="option.value" [disabled]="!option.value" [hidden]="!option.value">
+              {{ option.label }}
+            </option>
           }
         </select>
       </app-form-field>
 
-      <app-form-field label="Status" [control]="form.controls['status']" [required]="true">
+      <app-form-field
+        label="Status"
+        [control]="form.controls['status']"
+        [required]="true"
+        [hint]="isEditingSelf() ? 'You cannot deactivate your own account.' : ''"
+      >
         <select id="userStatus" formControlName="status" class="form-control">
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
@@ -41,12 +54,12 @@
 
     <app-form-field label="Department" [control]="form.controls['department']" [required]="true">
       <select id="userDept" formControlName="department" class="form-control">
-        <option value="">Please Select</option>
-        <option value="Engineering">Engineering</option>
-        <option value="Sales">Sales</option>
-        <option value="Design">Design</option>
-        <option value="Support">Support</option>
-        <option value="Finance">Finance</option>
+        <option value="" disabled hidden>
+          {{ departmentOptions().length ? 'Please Select' : 'Select a role first' }}
+        </option>
+        @for (department of departmentOptions(); track department) {
+          <option [value]="department">{{ department }}</option>
+        }
       </select>
     </app-form-field>
 
@@ -67,6 +80,7 @@
             id="userPassword"
             [type]="showPassword() ? 'text' : 'password'"
             formControlName="password"
+            [maxlength]="passwordMaxLength"
             placeholder="••••••••"
             class="form-control"
             autocomplete="new-password"

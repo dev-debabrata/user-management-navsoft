@@ -3,16 +3,21 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ImageItem, ImageUploadPreview } from '../models/image.model';
+import { batchedWrite } from '../utils/write-pacing';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ImageService {
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private baseUrl = `${environment.apiUrl}/images`;
 
   getImages(): Observable<ImageItem[]> {
-    return this.http.get<ImageItem[]>(`${this.baseUrl}?_sort=createdAt&_order=desc`);
+    return this.http.get<ImageItem[]>(this.baseUrl, {
+      params: this.auth.ownedScope({ _sort: 'createdAt', _order: 'desc' }),
+    });
   }
 
   getImageById(id: string | number): Observable<ImageItem> {
@@ -27,19 +32,14 @@ export class ImageService {
     return this.http.post<ImageItem>(this.baseUrl, payload);
   }
 
+  /** Always issued through `runPacedWrites`, which owns the retry and the reporting. */
   deleteImage(id: string | number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`, { context: batchedWrite() });
   }
 
   processFileForPreview(file: File): Promise<ImageUploadPreview> {
     return new Promise((resolve) => {
-      const allowedTypes = [
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-        'image/gif',
-        'image/svg+xml',
-      ];
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
       const maxBytes = (environment.maxUploadMb || 2) * 1024 * 1024;
 
       if (!allowedTypes.includes(file.type)) {
